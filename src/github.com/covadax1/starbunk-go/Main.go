@@ -16,8 +16,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// var token = "NzU3NzM2ODk3MzgzNDk3OTE5.GixRil.TI5ko3YgPFszBkr0OoPsY3V60MdWDloc_YmFDQ"
-
 type Configuration struct {
 	Token string
 }
@@ -80,6 +78,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 func registerBots() {
-	var bluBot bot.IMessageObserver = reply.BluBot{Name: "BluBot"}
+	var bluBot bot.IMessageObserver = reply.BluBot{}
 	bot.MessageService.AddObserver(bluBot)
 }
