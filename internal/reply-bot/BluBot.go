@@ -15,22 +15,26 @@ type BluBot struct {
 	Name string
 }
 
-const defaultPattern string = ".*?\b(blue?|bloo|b lu|eulb|azul|azulbot|cerulean)\b[^$]*$"
-const confirmPattern string = ".*?\b(blue?(bot)?)|(bot)|yes|no|yep|(i did)|(you got it)|(sure did)\b[^$]*$"
-const nicePattern string = "blue?bot,? say something nice about (?P<name>.+$)"
-const meanPattern string = "\b(fuck(ing)?|hate|die|kill|worst|mom|shit|murder|bots?)\b"
+const (
+	defaultPattern string = ".*?\b(blue?|bloo|b lu|eulb|azul|azulbot|cerulean)\b[^$]*$"
+	confirmPattern string = ".*?\b(blue?(bot)?)|(bot)|yes|no|yep|(i did)|(you got it)|(sure did)\b[^$]*$"
+	nicePattern    string = "blue?bot,? say something nice about (?P<name>.+$)"
+	meanPattern    string = "\b(fuck(ing)?|hate|die|kill|worst|mom|shit|murder|bots?)\b"
 
-const murderAvatar string = "https://imgur.com/Tpo8Ywd.jpg"
-const cheekyAvatar string = "https://i.imgur.com/dO4a59n.png"
+	murderAvatar string = "https://imgur.com/Tpo8Ywd.jpg"
+	cheekyAvatar string = "https://i.imgur.com/dO4a59n.png"
 
-const defaultResponse string = "Did somebody say Blu?"
-const cheekyResponse string = "Lol, Somebody definitely said Blu! :smile:"
-const friendlyResponse string = "%s, I think you're pretty Blu! :wink:"
-const contemptResponse string = "No way, Venn can suck my blu cane. :unamused:"
-const murderResponse string = "What the fuck did you just fucking say about me, you little bitch? I'll have you know I graduated top of my class in the Academia d'Azul, and I've been involved in numerous secret raids on Western La Noscea, and I have over 300 confirmed kills. I've trained with gorillas in warfare and I'm the top bombardier in the entire Eorzean Alliance. You are nothing to me but just another target. I will wipe you the fuck out with precision the likes of which has never been seen before on this Shard, mark my fucking words. You think you can get away with saying that shit to me over the Internet? Think again, fucker. As we speak I am contacting my secret network of tonberries across Eorzea and your IP is being traced right now so you better prepare for the storm, macaroni boy. The storm that wipes out the pathetic little thing you call your life. You're fucking dead, kid. I can be anywhere, anytime, and I can kill you in over seven hundred ways, and that's just with my bear-hands. Not only am I extensively trained in unarmed combat, but I have access to the entire arsenal of the Eorzean Blue Brigade and I will use it to its full extent to wipe your miserable ass off the face of the continent, you little shit. If only you could have known what unholy retribution your little \"clever\" comment was about to bring down upon you, maybe you would have held your fucking tongue. But you couldn't, you didn't, and now you're paying the price, you goddamn idiot. I will fucking cook you like the little macaroni boy you are. You're fucking dead, kiddo."
+	defaultResponse  string = "Did somebody say Blu?"
+	cheekyResponse   string = "Lol, Somebody definitely said Blu! :smile:"
+	friendlyResponse string = "%s, I think you're pretty Blu! :wink:"
+	contemptResponse string = "No way, Venn can suck my blu cane. :unamused:"
+	murderResponse   string = "What the fuck did you just fucking say about me, you little bitch? I'll have you know I graduated top of my class in the Academia d'Azul, and I've been involved in numerous secret raids on Western La Noscea, and I have over 300 confirmed kills. I've trained with gorillas in warfare and I'm the top bombardier in the entire Eorzean Alliance. You are nothing to me but just another target. I will wipe you the fuck out with precision the likes of which has never been seen before on this Shard, mark my fucking words. You think you can get away with saying that shit to me over the Internet? Think again, fucker. As we speak I am contacting my secret network of tonberries across Eorzea and your IP is being traced right now so you better prepare for the storm, macaroni boy. The storm that wipes out the pathetic little thing you call your life. You're fucking dead, kid. I can be anywhere, anytime, and I can kill you in over seven hundred ways, and that's just with my bear-hands. Not only am I extensively trained in unarmed combat, but I have access to the entire arsenal of the Eorzean Blue Brigade and I will use it to its full extent to wipe your miserable ass off the face of the continent, you little shit. If only you could have known what unholy retribution your little \"clever\" comment was about to bring down upon you, maybe you would have held your fucking tongue. But you couldn't, you didn't, and now you're paying the price, you goddamn idiot. I will fucking cook you like the little macaroni boy you are. You're fucking dead, kiddo."
+)
 
-var bluTimestamp = time.Unix(0, 0)
-var bluMurderTimestamp = time.Unix(0, 0)
+var (
+	bluTimestamp       = time.Unix(0, 0)
+	bluMurderTimestamp = time.Unix(0, 0)
+)
 
 func (b BluBot) ObserverName() string {
 	return "BluBot"
