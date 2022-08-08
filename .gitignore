@@ -1,3 +1,9 @@
+<<<<<<< HEAD
+=======
+# If you prefer the allow list template instead of the deny list, see community template:
+# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
+#
+>>>>>>> remotes/origin/master
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -13,3 +19,10 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+<<<<<<< HEAD
+=======
+
+# Go workspace file
+go.work
+config.json
+>>>>>>> remotes/origin/master
