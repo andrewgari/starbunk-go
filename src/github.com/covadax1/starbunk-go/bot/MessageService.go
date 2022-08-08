@@ -1,6 +1,8 @@
 package bot
 
-import "github.com/bwmarrin/discordgo"
+import (
+	"github.com/bwmarrin/discordgo"
+)
 
 var MessageService IMessagePublisher
 
@@ -9,8 +11,8 @@ type Publisher struct {
 }
 
 // addObserver implements bot.IMessagePublisher
-func (p Publisher) addObserver(observer IMessageObserver) {
-	p.Observers[observer.Name()] = observer
+func (p Publisher) AddObserver(observer IMessageObserver) {
+	p.Observers[observer.ObserverName()] = observer
 }
 
 // broadcast implements bot.IMessagePublisher

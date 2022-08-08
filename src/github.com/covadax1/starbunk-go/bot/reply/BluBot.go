@@ -1,16 +1,14 @@
-package bot
+package reply
 
-import "github.com/bwmarrin/discordgo"
+import (
+	"github.com/bwmarrin/discordgo"
+)
 
 type BluBot struct {
-	name string
+	Name string
 }
 
-func init() {
-	// MessagePublisher.addObserver(BluBot{name: "BluBot"})
-}
-
-func (b BluBot) Name() string {
+func (b BluBot) ObserverName() string {
 	return "BluBot"
 }
 
