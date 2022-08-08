@@ -1,13 +1,12 @@
-package reply
+package replybot
 
 import (
+	"golang-discord-bot/internal/config"
+	"golang-discord-bot/internal/webhook"
 	"log"
 	"regexp"
 	"strings"
 	"time"
-
-	"golang-discord-bot/src/github.com/covadax1/starbunk-go/bot/config"
-	"golang-discord-bot/src/github.com/covadax1/starbunk-go/bot/webhook"
 
 	"github.com/bwmarrin/discordgo"
 )

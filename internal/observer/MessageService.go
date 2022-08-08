@@ -1,4 +1,4 @@
-package bot
+package observer
 
 import (
 	"github.com/bwmarrin/discordgo"

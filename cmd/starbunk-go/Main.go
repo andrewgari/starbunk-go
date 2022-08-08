@@ -4,24 +4,20 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
+	"golang-discord-bot/internal/observer"
+	replybot "golang-discord-bot/internal/reply-bot"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"golang-discord-bot/src/github.com/covadax1/starbunk-go/bot"
-
-	"golang-discord-bot/src/github.com/covadax1/starbunk-go/bot/reply"
-
 	"github.com/bwmarrin/discordgo"
+	"github.com/op/go-logging"
 )
+
+var log = logging.MustGetLogger("example")
 
 type Configuration struct {
 	Token string
-}
-
-func init() {
-	bot.MessageService = bot.Publisher{Observers: make(map[string]bot.IMessageObserver)}
 }
 
 func readJSON() string {
@@ -29,7 +25,7 @@ func readJSON() string {
 	flag.Parse()
 	file, err := os.Open(*c)
 	if err != nil {
-		log.Fatal("can't open config file: ", err)
+		log.Error("can't open config file: ", err)
 	}
 	defer file.Close()
 	decoder := json.NewDecoder(file)
@@ -44,18 +40,18 @@ func readJSON() string {
 func main() {
 	token := readJSON()
 
-	bot, err := discordgo.New("Bot " + token)
+	client, err := discordgo.New("Bot " + token)
 
 	if err != nil {
 		fmt.Println("Error Creating Discord Session", err)
 		return
 	}
-
-	bot.AddHandler(messageCreate)
+	observer.MessageService = observer.Publisher{Observers: make(map[string]observer.IMessageObserver)}
+	client.AddHandler(messageCreate)
 	registerBots()
-	bot.Identify.Intents = discordgo.IntentsGuildMessages
+	client.Identify.Intents = discordgo.IntentsGuildMessages
 
-	err = bot.Open()
+	err = client.Open()
 	if err != nil {
 		fmt.Println("Error Opening Connection, ", err)
 		return
@@ -66,18 +62,17 @@ func main() {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
 
-	bot.Close()
-
+	client.Close()
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
-	bot.MessageService.Broadcast(s, *m.Message)
+	observer.MessageService.Broadcast(s, *m.Message)
 }
 
 func registerBots() {
-	var bluBot bot.IMessageObserver = reply.BluBot{}
-	bot.MessageService.AddObserver(bluBot)
+	var bluBot observer.IMessageObserver = replybot.BluBot{}
+	observer.MessageService.AddObserver(bluBot)
 }
