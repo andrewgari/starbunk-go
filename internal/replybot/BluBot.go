@@ -87,15 +87,13 @@ func getNameFromBluRequest(message, author string) string {
 	}
 	var matches = regex.FindStringSubmatch(message)
 	var index = regex.SubexpIndex("name")
-	name := "Hey"
+	name := matches[index]
 	if index > -1 {
-		if strings.ToLower(name) == "me" {
-			name = author
-		} else {
-			name = matches[index]
+		if strings.ToLower(name) != "me" {
+			return name
 		}
 	}
-	return name
+	return "Hey"
 }
 
 func isResponseToBlu(message discordgo.Message, selfID string) bool {

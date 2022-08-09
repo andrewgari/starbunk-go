@@ -23,8 +23,8 @@ func (b MacaroniBot) AvatarURL() string {
 var (
 	vennId           string = config.UserIDs["Venn"]
 	macaroniId       string = config.RoleIDs["Macaroni"]
-	vennPattern      string = "\bvenn\b"
-	macaroniPattern  string = "\bmacaroni\b"
+	vennPattern      string = "\\bvenn\\b"
+	macaroniPattern  string = "\\bmacaroni\\b"
 	vennResponse     string = `Correction: you mean Venn "Tyrone "The "Macaroni" Man" Johnson" Caelum`
 	macaroniResponse string = "Are you trying to reach <@&%s}>"
 )

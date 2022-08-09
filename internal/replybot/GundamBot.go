@@ -23,7 +23,7 @@ func (b GundamBot) Response() string {
 }
 
 func (b GundamBot) Pattern() string {
-	return "\bg(u|a)ndam\b"
+	return "\\bg(u|a)ndam\\b"
 }
 
 func (b GundamBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {

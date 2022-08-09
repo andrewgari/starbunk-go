@@ -23,7 +23,7 @@ func (b CheckBot) Response() string {
 }
 
 func (b CheckBot) Pattern() string {
-	return "\bczech\b"
+	return "\\bczech\\b"
 }
 
 func (b CheckBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {

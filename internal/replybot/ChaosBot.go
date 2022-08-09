@@ -23,7 +23,7 @@ func (b ChaosBot) Response() string {
 }
 
 func (b ChaosBot) Pattern() string {
-	return "\bchaos\b"
+	return "\\bchaos\\b"
 }
 
 func (b ChaosBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {

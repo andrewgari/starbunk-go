@@ -25,7 +25,7 @@ func (b EzioBot) Response() string {
 }
 
 func (b EzioBot) Pattern() string {
-	return "\bezio|h?assassin.*\b"
+	return "\\bezio|h?assassin.*\\b"
 }
 
 func (b EzioBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
