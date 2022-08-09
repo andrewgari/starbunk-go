@@ -7,7 +7,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func getWebhook(session *discordgo.Session, channelID string) (*discordgo.Webhook, error) {
+func GetWebhook(session *discordgo.Session, channelID string) (*discordgo.Webhook, error) {
 	var channel, err1 = session.Channel(channelID)
 	if err1 != nil {
 		log.ERROR.Println("Could not find Channel with ID "+channelID, err1)
@@ -33,7 +33,7 @@ func getWebhook(session *discordgo.Session, channelID string) (*discordgo.Webhoo
 }
 
 func WriteMessage(session *discordgo.Session, channelID string, content string, nickname string, avatarURL string) {
-	var webhook, err1 = getWebhook(session, channelID)
+	var webhook, err1 = GetWebhook(session, channelID)
 	if err1 != nil {
 		log.ERROR.Println("Error Creating Webhook for channel "+channelID, err1)
 	}

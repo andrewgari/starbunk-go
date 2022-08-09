@@ -24,3 +24,7 @@ var ChannelIDs = map[string]string{
 	"OnlyGuy":             "989524799044862022",
 	"AFK":                 "753251583902482637",
 }
+
+var GuildIDs = map[string]string{
+	"BLU": "757866614787014656",
+}

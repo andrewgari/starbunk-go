@@ -1,4 +1,4 @@
-package replybot
+package reply
 
 import (
 	"starbunk-bot/internal/utils"
