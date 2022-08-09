@@ -1,4 +1,4 @@
-package bot
+package main
 
 import (
 	"starbunk-bot/internal/bot/command"
@@ -6,8 +6,6 @@ import (
 	"starbunk-bot/internal/config"
 	"starbunk-bot/internal/observer"
 )
-
-var CommandBots = make(map[string]command.ICommandBot)
 
 func RegisterReplyBots() {
 	var bluBot observer.IMessageObserver = reply.BluBot{Name: "BluBot"}
@@ -42,5 +40,5 @@ func RegisterReplyBots() {
 
 func RegisterCommandBots() {
 	var clearWebhooks command.ICommandBot = command.ClearWebhooks{Command: "clearWebhooks", GuildID: config.GuildIDs["BLU"]}
-	CommandBots["clearWebhooks"] = clearWebhooks
+	observer.CommandBots["clearWebhooks"] = clearWebhooks
 }

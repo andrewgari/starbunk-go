@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"starbunk-bot/internal/bot"
 	"starbunk-bot/internal/log"
 	"starbunk-bot/internal/observer"
 	"syscall"
@@ -30,7 +29,8 @@ func main() {
 	}
 	observer.MessageService = observer.Publisher{Observers: make(map[string]observer.IMessageObserver)}
 	client.AddHandler(messageCreate)
-	bot.RegisterReplyBots()
+	RegisterCommandBots()
+	RegisterReplyBots()
 	client.Identify.Intents = discordgo.IntentsGuildMessages
 
 	err = client.Open()
