@@ -12,7 +12,7 @@ import (
 type VennBot struct {
 }
 
-var id string = config.UserIDs["venn"]
+var id string = config.UserIDs["Venn"]
 
 const response string = "Sorry, but that was über cringe..."
 
