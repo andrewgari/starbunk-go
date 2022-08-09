@@ -65,7 +65,7 @@ func readJSON() string {
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if m.Author.ID == s.State.User.ID {
+	if m.Author.Bot {
 		return
 	}
 	observer.MessageService.Broadcast(s, *m.Message)
