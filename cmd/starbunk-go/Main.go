@@ -27,8 +27,9 @@ func main() {
 		fmt.Println("Error Creating Discord Session", err)
 		return
 	}
-	observer.MessageService = observer.Publisher{Observers: make(map[string]observer.IMessageObserver)}
-	client.AddHandler(messageCreate)
+	observer.MessageService = observer.MessagePublisher{Observers: make(map[string]observer.IMessageObserver)}
+	client.AddHandler(onMessageCreate)
+	client.AddHandler(onUserVoiceStateChange)
 	RegisterCommandBots()
 	RegisterReplyBots()
 	client.Identify.Intents = discordgo.IntentsGuildMessages
@@ -64,9 +65,16 @@ func readJSON() string {
 	return Config.Token
 }
 
-func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+func onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.Bot {
 		return
 	}
 	observer.MessageService.Broadcast(s, *m.Message)
+}
+
+func onUserVoiceStateChange(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
+	if s.State.User.ID == v.UserID {
+		return
+	}
+
 }

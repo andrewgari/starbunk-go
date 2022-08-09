@@ -11,17 +11,17 @@ import (
 var MessageService IMessagePublisher
 var CommandBots = make(map[string]command.ICommandBot)
 
-type Publisher struct {
+type MessagePublisher struct {
 	Observers map[string]IMessageObserver
 }
 
 // addObserver implements bot.IMessagePublisher
-func (p Publisher) AddObserver(observer IMessageObserver) {
+func (p MessagePublisher) AddObserver(observer IMessageObserver) {
 	p.Observers[observer.ObserverName()] = observer
 }
 
 // broadcast implements bot.IMessagePublisher
-func (p Publisher) Broadcast(session *discordgo.Session, message discordgo.Message) {
+func (p MessagePublisher) Broadcast(session *discordgo.Session, message discordgo.Message) {
 	if message.Content[:1] == "?" {
 		log.INFO.Println("Got Command, ", message.Content)
 		command := strings.Split(message.Content, " ")[0]
