@@ -1,9 +1,11 @@
 package replybot
 
 import (
+	"fmt"
 	"golang-discord-bot/internal/config"
 	"golang-discord-bot/internal/log"
 	"golang-discord-bot/internal/webhook"
+	"golang-discord-bot/utils"
 	"regexp"
 	"strings"
 	"time"
@@ -16,10 +18,10 @@ type BluBot struct {
 }
 
 const (
-	defaultPattern string = ".*?\b(blue?|bloo|b lu|eulb|azul|azulbot|cerulean)\b[^$]*$"
-	confirmPattern string = ".*?\b(blue?(bot)?)|(bot)|yes|no|yep|(i did)|(you got it)|(sure did)\b[^$]*$"
-	nicePattern    string = "blue?bot,? say something nice about (?P<name>.+$)"
-	meanPattern    string = "\b(fuck(ing)?|hate|die|kill|worst|mom|shit|murder|bots?)\b"
+	defaultPattern string = "(?i)\\b(blue?|bloo|b lue?|eulb|azul|azul|cerulean|azure)(bot)?\\b"
+	confirmPattern string = "(?i)\\b(blue?(bot)?)|(bot)|yes|no|yep|yeah|(i did)|(you got it)|(sure did)\\b"
+	nicePattern    string = "(?i)blue?bot,? say something nice about (?P<name>.+$)"
+	meanPattern    string = "(?i)\\b(fuck(ing)?|hate|die|kill|worst|mom|shit|murder|bots?)\\b"
 
 	murderAvatar string = "https://imgur.com/Tpo8Ywd.jpg"
 	cheekyAvatar string = "https://i.imgur.com/dO4a59n.png"
@@ -46,28 +48,36 @@ func (b BluBot) AvatarURL() string {
 
 func (b BluBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	channelID := message.ChannelID
-	if strings.Contains(message.Content, "blu") {
-		log.INFO.Println("Running BlueBot HandleMessage")
-		webhook.WriteMessage(session, channelID, "Did somebody say BLU?", b.ObserverName(), b.AvatarURL())
-	} else if isRequestToSayBlu(message.Content) {
-		getNameFromBluRequest(message.Content, message.Author.Username)
+	if isRequestToSayBlu(message.Content) {
+		name := getNameFromBluRequest(message.Content, message.Author.Username)
+		if strings.ToLower(name) == "venn" {
+			webhook.WriteMessage(session, channelID, contemptResponse, b.ObserverName(), b.AvatarURL())
+		} else {
+			webhook.WriteMessage(session, channelID, fmt.Sprintf(friendlyResponse, name), b.ObserverName(), b.AvatarURL())
+		}
+	} else if isVennInsultingBlu(message.Content, message.Author.ID) {
+		bluTimestamp = time.Now()
+		bluMurderTimestamp = time.Now()
+		webhook.WriteMessage(session, channelID, murderResponse, b.ObserverName(), murderAvatar)
+	} else if isResponseToBlu(message, session.State.SessionID) {
+		bluTimestamp = time.Unix(0, 0)
+		webhook.WriteMessage(session, channelID, cheekyResponse, b.ObserverName(), cheekyAvatar)
+	} else if didSomebodySayBlu(message.Content) {
+		bluTimestamp = time.Now()
+		webhook.WriteMessage(session, channelID, defaultResponse, b.ObserverName(), b.AvatarURL())
 	}
 }
 
 func didSomebodySayBlu(message string) bool {
-	regex, err := regexp.MatchString(defaultPattern, message)
-	if err != nil {
+	return utils.Match(defaultPattern, message)
+}
 
-	}
-	return regex
+func confirmSomebodySaidBlu(message string) bool {
+	return utils.Match(confirmPattern, message)
 }
 
 func isRequestToSayBlu(message string) bool {
-	match, err := regexp.MatchString(nicePattern, message)
-	if err != nil {
-		log.ERROR.Println("Error Parsing Message: ", err)
-	}
-	return match
+	return utils.Match(nicePattern, message)
 }
 
 func getNameFromBluRequest(message, author string) string {
@@ -89,18 +99,18 @@ func getNameFromBluRequest(message, author string) string {
 }
 
 func isResponseToBlu(message discordgo.Message, selfID string) bool {
-	return message.ReferencedMessage != nil &&
-		message.ReferencedMessage.Author.Username == selfID &&
-		bluMurderTimestamp.UTC().YearDay() < time.Now().YearDay()
+	if message.ReferencedMessage != nil && message.ReferencedMessage.Author.Username == selfID {
+		log.INFO.Println("Message is Referenced by me")
+		return true
+	} else if message.Timestamp.Before(bluTimestamp.Add(3e+11)) && utils.Match(confirmPattern, message.Content) { // if the message timestamp is within 5 minutes of the last blue message
+		return true
+	}
+	return false
 }
 
 func isVennInsultingBlu(message, authorID string) bool {
-	if authorID == config.UserIDs["venn"] {
-		match, err := regexp.MatchString(meanPattern, message)
-		if err != nil {
-			log.ERROR.Println("Error Parsing Message: ", err)
-		}
-		return match
+	if authorID == config.UserIDs["venn"] && bluMurderTimestamp.UTC().Day() < time.Now().Day() && utils.Match(meanPattern, message) {
+		return true
 	}
 	return false
 }
