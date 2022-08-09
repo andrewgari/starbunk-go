@@ -1,8 +1,8 @@
 package replybot
 
 import (
+	"golang-discord-bot/internal/utils"
 	"golang-discord-bot/internal/webhook"
-	"golang-discord-bot/utils"
 
 	"github.com/bwmarrin/discordgo"
 )
