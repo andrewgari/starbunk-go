@@ -1,7 +1,7 @@
 package replybot
 
 import (
-	"golang-discord-bot/internal/webhook"
+	"starbunk-bot/internal/webhook"
 	"time"
 
 	"github.com/bwmarrin/discordgo"

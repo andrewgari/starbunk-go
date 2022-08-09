@@ -2,11 +2,10 @@ package replybot
 
 import (
 	"fmt"
-	"golang-discord-bot/internal/config"
-	"golang-discord-bot/internal/log"
-	"golang-discord-bot/internal/utils"
-	"golang-discord-bot/internal/webhook"
 	"regexp"
+	"starbunk-bot/internal/log"
+	"starbunk-bot/internal/utils"
+	"starbunk-bot/internal/webhook"
 	"strings"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 
 type BluBot struct {
 	Name string
+	ID   string
 }
 
 const (
@@ -48,39 +48,39 @@ func (b BluBot) AvatarURL() string {
 
 func (b BluBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	channelID := message.ChannelID
-	if isRequestToSayBlu(message.Content) {
-		name := getNameFromBluRequest(message.Content, message.Author.Username)
+	if b.isRequestToSayBlu(message.Content) {
+		name := b.getNameFromBluRequest(message.Content, message.Author.Username)
 		if strings.ToLower(name) == "venn" {
 			webhook.WriteMessage(session, channelID, contemptResponse, b.Name, b.AvatarURL())
 		} else {
 			webhook.WriteMessage(session, channelID, fmt.Sprintf(friendlyResponse, name), b.Name, b.AvatarURL())
 		}
-	} else if isVennInsultingBlu(message.Content, message.Author.ID) {
+	} else if b.isVennInsultingBlu(message.Content, message.Author.ID) {
 		bluTimestamp = time.Now()
 		bluMurderTimestamp = time.Now()
 		webhook.WriteMessage(session, channelID, murderResponse, b.Name, murderAvatar)
-	} else if isResponseToBlu(message, session.State.SessionID) {
+	} else if b.isResponseToBlu(message, session.State.SessionID) {
 		bluTimestamp = time.Unix(0, 0)
 		webhook.WriteMessage(session, channelID, cheekyResponse, b.Name, cheekyAvatar)
-	} else if didSomebodySayBlu(message.Content) {
+	} else if b.didSomebodySayBlu(message.Content) {
 		bluTimestamp = time.Now()
 		webhook.WriteMessage(session, channelID, defaultResponse, b.Name, b.AvatarURL())
 	}
 }
 
-func didSomebodySayBlu(message string) bool {
+func (b BluBot) didSomebodySayBlu(message string) bool {
 	return utils.Match(defaultPattern, message)
 }
 
-func confirmSomebodySaidBlu(message string) bool {
+func (b BluBot) confirmSomebodySaidBlu(message string) bool {
 	return utils.Match(confirmPattern, message)
 }
 
-func isRequestToSayBlu(message string) bool {
+func (b BluBot) isRequestToSayBlu(message string) bool {
 	return utils.Match(nicePattern, message)
 }
 
-func getNameFromBluRequest(message, author string) string {
+func (b BluBot) getNameFromBluRequest(message, author string) string {
 	regex, err := regexp.Compile(nicePattern)
 	if err != nil {
 		log.ERROR.Println("Error Parsing Message: ", err)
@@ -96,18 +96,18 @@ func getNameFromBluRequest(message, author string) string {
 	return "Hey"
 }
 
-func isResponseToBlu(message discordgo.Message, selfID string) bool {
+func (b BluBot) isResponseToBlu(message discordgo.Message, selfID string) bool {
 	if message.ReferencedMessage != nil && message.ReferencedMessage.Author.Username == selfID {
 		log.INFO.Println("Message is Referenced by me")
 		return true
-	} else if message.Timestamp.Before(bluTimestamp.Add(3e+11)) && confirmSomebodySaidBlu(message.Content) { // if the message timestamp is within 5 minutes of the last blue message
+	} else if message.Timestamp.Before(bluTimestamp.Add(3e+11)) && b.confirmSomebodySaidBlu(message.Content) { // if the message timestamp is within 5 minutes of the last blue message
 		return true
 	}
 	return false
 }
 
-func isVennInsultingBlu(message, authorID string) bool {
-	if authorID == config.UserIDs["Venn"] && bluMurderTimestamp.UTC().Day() < time.Now().Day() && utils.Match(meanPattern, message) {
+func (b BluBot) isVennInsultingBlu(message, authorID string) bool {
+	if authorID == b.ID && bluMurderTimestamp.UTC().Day() < time.Now().Day() && utils.Match(meanPattern, message) {
 		return true
 	}
 	return false

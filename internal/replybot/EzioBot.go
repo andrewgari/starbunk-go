@@ -2,9 +2,8 @@ package replybot
 
 import (
 	"fmt"
-	"golang-discord-bot/internal/config"
-	"golang-discord-bot/internal/utils"
-	"golang-discord-bot/internal/webhook"
+	"starbunk-bot/internal/utils"
+	"starbunk-bot/internal/webhook"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -32,6 +31,6 @@ func (b EzioBot) Pattern() string {
 
 func (b EzioBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	if message.Author.ID == b.ID && utils.Match(b.Pattern(), message.Content) {
-		webhook.WriteMessage(session, message.ChannelID, fmt.Sprintf(b.Response(), config.UserIDs["Bender"]), b.Name, b.AvatarURL())
+		webhook.WriteMessage(session, message.ChannelID, fmt.Sprintf(b.Response(), b.ID), b.Name, b.AvatarURL())
 	}
 }

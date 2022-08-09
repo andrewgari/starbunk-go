@@ -2,9 +2,9 @@ package replybot
 
 import (
 	"fmt"
-	"golang-discord-bot/internal/utils"
-	"golang-discord-bot/internal/webhook"
 	"math/rand"
+	"starbunk-bot/internal/utils"
+	"starbunk-bot/internal/webhook"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"

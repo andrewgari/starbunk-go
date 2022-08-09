@@ -1,9 +1,9 @@
 package utils
 
 import (
-	"golang-discord-bot/internal/log"
 	"math/rand"
 	"regexp"
+	"starbunk-bot/internal/log"
 	"time"
 )
 

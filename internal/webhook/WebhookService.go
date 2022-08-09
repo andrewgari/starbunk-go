@@ -2,7 +2,7 @@ package webhook
 
 import (
 	"fmt"
-	"golang-discord-bot/internal/log"
+	"starbunk-bot/internal/log"
 
 	"github.com/bwmarrin/discordgo"
 )
