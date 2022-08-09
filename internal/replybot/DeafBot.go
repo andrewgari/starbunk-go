@@ -1,7 +1,6 @@
 package replybot
 
 import (
-	"golang-discord-bot/internal/config"
 	"golang-discord-bot/internal/webhook"
 	"time"
 
@@ -9,10 +8,12 @@ import (
 )
 
 type DeafBot struct {
+	Name string
+	ID   string
 }
 
 func (b DeafBot) ObserverName() string {
-	return "DeafBot"
+	return b.Name
 }
 
 func (b DeafBot) AvatarURL() string {
@@ -26,9 +27,9 @@ func (b DeafBot) Response() string {
 var lastResponse = time.Unix(0, 0)
 
 func (b DeafBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
-	if message.Author.ID == config.UserIDs["Deaf"] && time.Now().After(lastResponse.AddDate(0, 0, 10)) {
+	if message.Author.ID == b.ID && time.Now().After(lastResponse.AddDate(0, 0, 10)) {
 		if !lastResponse.IsZero() {
-			webhook.WriteMessage(session, message.ChannelID, b.Response(), b.ObserverName(), b.AvatarURL())
+			webhook.WriteMessage(session, message.ChannelID, b.Response(), b.Name, b.AvatarURL())
 		}
 		lastResponse = time.Now()
 	}

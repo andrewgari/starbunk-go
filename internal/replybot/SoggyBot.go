@@ -1,7 +1,6 @@
 package replybot
 
 import (
-	"golang-discord-bot/internal/config"
 	"golang-discord-bot/internal/utils"
 	"golang-discord-bot/internal/webhook"
 
@@ -9,14 +8,12 @@ import (
 )
 
 type SoggyBot struct {
-}
-
-func (b SoggyBot) id() string {
-	return config.RoleIDs["WetBread"]
+	Name string
+	Role string
 }
 
 func (b SoggyBot) ObserverName() string {
-	return "SoggyBot"
+	return b.Name
 }
 
 func (b SoggyBot) AvatarURL() string {
@@ -32,7 +29,7 @@ func (b SoggyBot) Response() string {
 }
 
 func (b SoggyBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
-	if utils.Match(b.Pattern(), message.Content) && utils.Contains(message.Member.Roles, b.id()) {
-		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.ObserverName(), b.AvatarURL())
+	if utils.Match(b.Pattern(), message.Content) && utils.Contains(message.Member.Roles, b.Role) {
+		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.Name, b.AvatarURL())
 	}
 }

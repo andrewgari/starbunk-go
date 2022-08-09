@@ -8,10 +8,11 @@ import (
 )
 
 type SpiderBot struct {
+	Name string
 }
 
 func (b SpiderBot) ObserverName() string {
-	return "Spider-Bot"
+	return b.Name
 }
 
 func (b SpiderBot) AvatarURL() string {
@@ -28,6 +29,6 @@ func (b SpiderBot) Response() string {
 
 func (b SpiderBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	if utils.Match(b.Pattern(), message.Content) {
-		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.ObserverName(), b.AvatarURL())
+		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.Name, b.AvatarURL())
 	}
 }

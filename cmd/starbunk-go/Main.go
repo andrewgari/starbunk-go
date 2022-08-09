@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"golang-discord-bot/internal/config"
 	"golang-discord-bot/internal/log"
 	"golang-discord-bot/internal/observer"
 	"golang-discord-bot/internal/replybot"
@@ -72,32 +73,32 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 func registerBots() {
-	var bluBot observer.IMessageObserver = replybot.BluBot{}
+	var bluBot observer.IMessageObserver = replybot.BluBot{Name: "BluBot"}
 	observer.MessageService.AddObserver(bluBot)
-	var chaosBot observer.IMessageObserver = replybot.ChaosBot{}
+	var chaosBot observer.IMessageObserver = replybot.ChaosBot{Name: "ChaosBot"}
 	observer.MessageService.AddObserver(chaosBot)
-	var checkBot observer.IMessageObserver = replybot.CheckBot{}
+	var checkBot observer.IMessageObserver = replybot.CheckBot{Name: "CzechBot"}
 	observer.MessageService.AddObserver(checkBot)
-	var deafBot observer.IMessageObserver = replybot.DeafBot{}
+	var deafBot observer.IMessageObserver = replybot.DeafBot{Name: "DeafBot", ID: config.UserIDs["Deaf"]}
 	observer.MessageService.AddObserver(deafBot)
-	var ezioBot observer.IMessageObserver = replybot.EzioBot{}
+	var ezioBot observer.IMessageObserver = replybot.EzioBot{Name: "Ezio Auditore Da Firenze", ID: config.UserIDs["Bender"]}
 	observer.MessageService.AddObserver(ezioBot)
-	var gundamBot observer.IMessageObserver = replybot.GundamBot{}
+	var gundamBot observer.IMessageObserver = replybot.GundamBot{Name: "That Famous Unicorn Robot, \"Gandum\""}
 	observer.MessageService.AddObserver(gundamBot)
-	var holdBot observer.IMessageObserver = replybot.HoldBot{}
+	var holdBot observer.IMessageObserver = replybot.HoldBot{Name: "HoldBot"}
 	observer.MessageService.AddObserver(holdBot)
-	var macaroniBot observer.IMessageObserver = replybot.MacaroniBot{}
+	var macaroniBot observer.IMessageObserver = replybot.MacaroniBot{Name: "MacaroniBot", ID: config.UserIDs["Venn"], Role: config.RoleIDs["Macaroni"]}
 	observer.MessageService.AddObserver(macaroniBot)
-	var pickleBot observer.IMessageObserver = replybot.PickleBot{}
+	var pickleBot observer.IMessageObserver = replybot.PickleBot{Name: "GremlinBot", ID: config.UserIDs["Sig"]}
 	observer.MessageService.AddObserver(pickleBot)
-	var sheeshBot observer.IMessageObserver = replybot.SheeshBot{}
+	var sheeshBot observer.IMessageObserver = replybot.SheeshBot{Name: "SheeshBot", ID: config.UserIDs["Guy"]}
 	observer.MessageService.AddObserver(sheeshBot)
-	var sixtyNineBot observer.IMessageObserver = replybot.SixtyNineBot{}
+	var sixtyNineBot observer.IMessageObserver = replybot.SixtyNineBot{Name: "CovaBot"}
 	observer.MessageService.AddObserver(sixtyNineBot)
-	var soggyBot observer.IMessageObserver = replybot.SoggyBot{}
+	var soggyBot observer.IMessageObserver = replybot.SoggyBot{Name: "SoggyBot", Role: config.RoleIDs["WetBread"]}
 	observer.MessageService.AddObserver(soggyBot)
-	var spiderBot observer.IMessageObserver = replybot.SpiderBot{}
+	var spiderBot observer.IMessageObserver = replybot.SpiderBot{Name: "Spider-Bot"}
 	observer.MessageService.AddObserver(spiderBot)
-	var vennBot observer.IMessageObserver = replybot.VennBot{}
+	var vennBot observer.IMessageObserver = replybot.VennBot{ID: config.UserIDs["Venn"]}
 	observer.MessageService.AddObserver(vennBot)
 }

@@ -1,17 +1,14 @@
 package replybot
 
 import (
-	"golang-discord-bot/internal/config"
+	"golang-discord-bot/internal/utils"
 	"golang-discord-bot/internal/webhook"
 
 	"github.com/bwmarrin/discordgo"
 )
 
 type VennBot struct {
-}
-
-func (b VennBot) id() string {
-	return config.UserIDs["Venn"]
+	ID string
 }
 
 func (b VennBot) ObserverName() string {
@@ -27,7 +24,7 @@ func (b VennBot) Response() string {
 }
 
 func (b VennBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
-	if message.Author.ID == b.id() && roll20(15) {
+	if message.Author.ID == b.ID && utils.Roll20(15) {
 		var avatarUrl = message.Member.AvatarURL("")
 		var username = message.Member.Nick
 		webhook.WriteMessage(session, message.ChannelID, b.Response(), username, avatarUrl)

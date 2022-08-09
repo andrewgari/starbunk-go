@@ -8,10 +8,11 @@ import (
 )
 
 type ChaosBot struct {
+	Name string
 }
 
 func (b ChaosBot) ObserverName() string {
-	return "ChaosBot"
+	return b.Name
 }
 
 func (b ChaosBot) AvatarURL() string {
@@ -28,6 +29,6 @@ func (b ChaosBot) Pattern() string {
 
 func (b ChaosBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	if utils.Match(b.Pattern(), message.Content) {
-		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.ObserverName(), b.AvatarURL())
+		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.Name, b.AvatarURL())
 	}
 }

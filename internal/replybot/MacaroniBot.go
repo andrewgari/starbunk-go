@@ -2,7 +2,6 @@ package replybot
 
 import (
 	"fmt"
-	"golang-discord-bot/internal/config"
 	"golang-discord-bot/internal/utils"
 	"golang-discord-bot/internal/webhook"
 
@@ -10,10 +9,13 @@ import (
 )
 
 type MacaroniBot struct {
+	Name string
+	ID   string
+	Role string
 }
 
 func (b MacaroniBot) ObserverName() string {
-	return "MacaroniBot"
+	return b.Name
 }
 
 func (b MacaroniBot) AvatarURL() string {
@@ -21,8 +23,6 @@ func (b MacaroniBot) AvatarURL() string {
 }
 
 var (
-	vennId           string = config.UserIDs["Venn"]
-	macaroniId       string = config.RoleIDs["Macaroni"]
 	vennPattern      string = "\\bvenn\\b"
 	macaroniPattern  string = "\\bmacaroni\\b"
 	vennResponse     string = `Correction: you mean Venn "Tyrone "The "Macaroni" Man" Johnson" Caelum`
@@ -31,9 +31,9 @@ var (
 
 func (b MacaroniBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	if utils.Match(vennPattern, message.Content) {
-		webhook.WriteMessage(session, message.ChannelID, vennResponse, b.ObserverName(), b.AvatarURL())
+		webhook.WriteMessage(session, message.ChannelID, vennResponse, b.Name, b.AvatarURL())
 	}
 	if utils.Match(macaroniPattern, message.Content) {
-		webhook.WriteMessage(session, message.ChannelID, fmt.Sprintf(macaroniResponse, macaroniId), b.ObserverName(), b.AvatarURL())
+		webhook.WriteMessage(session, message.ChannelID, fmt.Sprintf(macaroniResponse, b.ID), b.Name, b.AvatarURL())
 	}
 }

@@ -1,7 +1,6 @@
 package replybot
 
 import (
-	"golang-discord-bot/internal/config"
 	"golang-discord-bot/internal/utils"
 	"golang-discord-bot/internal/webhook"
 
@@ -9,14 +8,12 @@ import (
 )
 
 type PickleBot struct {
-}
-
-func (b PickleBot) id() string {
-	return config.UserIDs["Sig"]
+	Name string
+	ID   string
 }
 
 func (b PickleBot) ObserverName() string {
-	return "GremlinBot"
+	return b.Name
 }
 
 func (b PickleBot) AvatarURL() string {
@@ -32,7 +29,7 @@ func (b PickleBot) Response() string {
 }
 
 func (b PickleBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
-	if utils.Match(b.Pattern(), message.Content) || (message.Author.ID == b.id() && roll20(15)) {
-		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.ObserverName(), b.AvatarURL())
+	if utils.Match(b.Pattern(), message.Content) || (message.Author.ID == b.ID && utils.Roll20(15)) {
+		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.Name, b.AvatarURL())
 	}
 }

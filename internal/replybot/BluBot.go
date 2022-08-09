@@ -39,7 +39,7 @@ var (
 )
 
 func (b BluBot) ObserverName() string {
-	return "BluBot"
+	return b.Name
 }
 
 func (b BluBot) AvatarURL() string {
@@ -51,20 +51,20 @@ func (b BluBot) HandleMessage(session *discordgo.Session, message discordgo.Mess
 	if isRequestToSayBlu(message.Content) {
 		name := getNameFromBluRequest(message.Content, message.Author.Username)
 		if strings.ToLower(name) == "venn" {
-			webhook.WriteMessage(session, channelID, contemptResponse, b.ObserverName(), b.AvatarURL())
+			webhook.WriteMessage(session, channelID, contemptResponse, b.Name, b.AvatarURL())
 		} else {
-			webhook.WriteMessage(session, channelID, fmt.Sprintf(friendlyResponse, name), b.ObserverName(), b.AvatarURL())
+			webhook.WriteMessage(session, channelID, fmt.Sprintf(friendlyResponse, name), b.Name, b.AvatarURL())
 		}
 	} else if isVennInsultingBlu(message.Content, message.Author.ID) {
 		bluTimestamp = time.Now()
 		bluMurderTimestamp = time.Now()
-		webhook.WriteMessage(session, channelID, murderResponse, b.ObserverName(), murderAvatar)
+		webhook.WriteMessage(session, channelID, murderResponse, b.Name, murderAvatar)
 	} else if isResponseToBlu(message, session.State.SessionID) {
 		bluTimestamp = time.Unix(0, 0)
-		webhook.WriteMessage(session, channelID, cheekyResponse, b.ObserverName(), cheekyAvatar)
+		webhook.WriteMessage(session, channelID, cheekyResponse, b.Name, cheekyAvatar)
 	} else if didSomebodySayBlu(message.Content) {
 		bluTimestamp = time.Now()
-		webhook.WriteMessage(session, channelID, defaultResponse, b.ObserverName(), b.AvatarURL())
+		webhook.WriteMessage(session, channelID, defaultResponse, b.Name, b.AvatarURL())
 	}
 }
 
@@ -100,7 +100,7 @@ func isResponseToBlu(message discordgo.Message, selfID string) bool {
 	if message.ReferencedMessage != nil && message.ReferencedMessage.Author.Username == selfID {
 		log.INFO.Println("Message is Referenced by me")
 		return true
-	} else if message.Timestamp.Before(bluTimestamp.Add(3e+11)) && utils.Match(confirmPattern, message.Content) { // if the message timestamp is within 5 minutes of the last blue message
+	} else if message.Timestamp.Before(bluTimestamp.Add(3e+11)) && confirmSomebodySaidBlu(message.Content) { // if the message timestamp is within 5 minutes of the last blue message
 		return true
 	}
 	return false

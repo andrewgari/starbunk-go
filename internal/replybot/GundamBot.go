@@ -8,10 +8,11 @@ import (
 )
 
 type GundamBot struct {
+	Name string
 }
 
 func (b GundamBot) ObserverName() string {
-	return "That Famous Unicorn Robot, \"Gandum\""
+	return b.Name
 }
 
 func (b GundamBot) AvatarURL() string {
@@ -28,6 +29,6 @@ func (b GundamBot) Pattern() string {
 
 func (b GundamBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	if utils.Match(b.Pattern(), message.Content) {
-		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.ObserverName(), b.AvatarURL())
+		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.Name, b.AvatarURL())
 	}
 }

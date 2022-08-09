@@ -2,7 +2,6 @@ package replybot
 
 import (
 	"fmt"
-	"golang-discord-bot/internal/config"
 	"golang-discord-bot/internal/utils"
 	"golang-discord-bot/internal/webhook"
 	"math/rand"
@@ -12,14 +11,12 @@ import (
 )
 
 type SheeshBot struct {
-}
-
-func (b SheeshBot) id() string {
-	return config.UserIDs["Guy"]
+	Name string
+	ID   string
 }
 
 func (b SheeshBot) ObserverName() string {
-	return "SheeshBot"
+	return b.Name
 }
 
 func (b SheeshBot) AvatarURL() string {
@@ -35,7 +32,7 @@ func (b SheeshBot) Response() string {
 }
 
 func (b SheeshBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
-	if utils.Match(b.Pattern(), message.Content) || message.Author.ID == b.id() {
-		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.ObserverName(), b.AvatarURL())
+	if utils.Match(b.Pattern(), message.Content) || message.Author.ID == b.ID {
+		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.Name, b.AvatarURL())
 	}
 }

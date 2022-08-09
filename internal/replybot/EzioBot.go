@@ -10,10 +10,12 @@ import (
 )
 
 type EzioBot struct {
+	Name string
+	ID   string
 }
 
 func (b EzioBot) ObserverName() string {
-	return "Ezio Auditore Da Firenze"
+	return b.Name
 }
 
 func (b EzioBot) AvatarURL() string {
@@ -29,7 +31,7 @@ func (b EzioBot) Pattern() string {
 }
 
 func (b EzioBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
-	if message.Author.ID == config.UserIDs["Bender"] && utils.Match(b.Pattern(), message.Content) {
-		webhook.WriteMessage(session, message.ChannelID, fmt.Sprintf(b.Response(), config.UserIDs["Bender"]), b.ObserverName(), b.AvatarURL())
+	if message.Author.ID == b.ID && utils.Match(b.Pattern(), message.Content) {
+		webhook.WriteMessage(session, message.ChannelID, fmt.Sprintf(b.Response(), config.UserIDs["Bender"]), b.Name, b.AvatarURL())
 	}
 }
