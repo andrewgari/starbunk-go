@@ -26,7 +26,7 @@ func (b GundamBot) Pattern() string {
 	return "\bg(u|a)ndam\b"
 }
 
-func (b GundamBot) HandleMessage(session *discordgo.Session, message *discordgo.Message) {
+func (b GundamBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	if utils.Match(b.Pattern(), message.Content) {
 		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.ObserverName(), b.AvatarURL())
 	}

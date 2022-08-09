@@ -34,7 +34,7 @@ func (b SheeshBot) Response() string {
 	return fmt.Sprintf("sh%ssh", strings.Repeat("e", rand.Intn(500)))
 }
 
-func (b SheeshBot) HandleMessage(session *discordgo.Session, message *discordgo.Message) {
+func (b SheeshBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	if utils.Match(b.Pattern(), message.Content) || message.Author.ID == b.id() {
 		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.ObserverName(), b.AvatarURL())
 	}

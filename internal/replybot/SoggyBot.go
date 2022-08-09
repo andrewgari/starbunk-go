@@ -31,7 +31,7 @@ func (b SoggyBot) Response() string {
 	return "Sounds like somebody enjoys Wet Bread."
 }
 
-func (b SoggyBot) HandleMessage(session *discordgo.Session, message *discordgo.Message) {
+func (b SoggyBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	if utils.Match(b.Pattern(), message.Content) && utils.Contains(message.Member.Roles, b.id()) {
 		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.ObserverName(), b.AvatarURL())
 	}

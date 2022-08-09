@@ -74,4 +74,30 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 func registerBots() {
 	var bluBot observer.IMessageObserver = replybot.BluBot{}
 	observer.MessageService.AddObserver(bluBot)
+	var chaosBot observer.IMessageObserver = replybot.ChaosBot{}
+	observer.MessageService.AddObserver(chaosBot)
+	var checkBot observer.IMessageObserver = replybot.CheckBot{}
+	observer.MessageService.AddObserver(checkBot)
+	var deafBot observer.IMessageObserver = replybot.DeafBot{}
+	observer.MessageService.AddObserver(deafBot)
+	var ezioBot observer.IMessageObserver = replybot.EzioBot{}
+	observer.MessageService.AddObserver(ezioBot)
+	var gundamBot observer.IMessageObserver = replybot.GundamBot{}
+	observer.MessageService.AddObserver(gundamBot)
+	var holdBot observer.IMessageObserver = replybot.HoldBot{}
+	observer.MessageService.AddObserver(holdBot)
+	var macaroniBot observer.IMessageObserver = replybot.MacaroniBot{}
+	observer.MessageService.AddObserver(macaroniBot)
+	var pickleBot observer.IMessageObserver = replybot.PickleBot{}
+	observer.MessageService.AddObserver(pickleBot)
+	var sheeshBot observer.IMessageObserver = replybot.SheeshBot{}
+	observer.MessageService.AddObserver(sheeshBot)
+	var sixtyNineBot observer.IMessageObserver = replybot.SixtyNineBot{}
+	observer.MessageService.AddObserver(sixtyNineBot)
+	var soggyBot observer.IMessageObserver = replybot.SoggyBot{}
+	observer.MessageService.AddObserver(soggyBot)
+	var spiderBot observer.IMessageObserver = replybot.SpiderBot{}
+	observer.MessageService.AddObserver(spiderBot)
+	var vennBot observer.IMessageObserver = replybot.VennBot{}
+	observer.MessageService.AddObserver(vennBot)
 }

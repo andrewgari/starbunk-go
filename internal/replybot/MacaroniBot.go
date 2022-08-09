@@ -29,7 +29,7 @@ var (
 	macaroniResponse string = "Are you trying to reach <@&%s}>"
 )
 
-func (b MacaroniBot) HandleMessage(session *discordgo.Session, message *discordgo.Message) {
+func (b MacaroniBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	if utils.Match(vennPattern, message.Content) {
 		webhook.WriteMessage(session, message.ChannelID, vennResponse, b.ObserverName(), b.AvatarURL())
 	}

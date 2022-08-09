@@ -28,7 +28,7 @@ func (b EzioBot) Pattern() string {
 	return "\bezio|h?assassin.*\b"
 }
 
-func (b EzioBot) HandleMessage(session *discordgo.Session, message *discordgo.Message) {
+func (b EzioBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	if message.Author.ID == config.UserIDs["Bender"] && utils.Match(b.Pattern(), message.Content) {
 		webhook.WriteMessage(session, message.ChannelID, fmt.Sprintf(b.Response(), config.UserIDs["Bender"]), b.ObserverName(), b.AvatarURL())
 	}

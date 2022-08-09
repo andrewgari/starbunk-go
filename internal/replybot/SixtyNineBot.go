@@ -26,7 +26,7 @@ func (b SixtyNineBot) Response() string {
 	return "Nice."
 }
 
-func (b SixtyNineBot) HandleMessage(session *discordgo.Session, message *discordgo.Message) {
+func (b SixtyNineBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	if utils.Match(b.Pattern(), message.Content) {
 		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.ObserverName(), b.AvatarURL())
 	}

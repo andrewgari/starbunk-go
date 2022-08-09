@@ -26,7 +26,7 @@ func (b CheckBot) Pattern() string {
 	return "\bczech\b"
 }
 
-func (b CheckBot) HandleMessage(session *discordgo.Session, message *discordgo.Message) {
+func (b CheckBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	if utils.Match(b.Pattern(), message.Content) {
 		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.ObserverName(), b.AvatarURL())
 	}
