@@ -4,41 +4,23 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"golang-discord-bot/internal/log"
 	"golang-discord-bot/internal/observer"
-	replybot "golang-discord-bot/internal/reply-bot"
+	"golang-discord-bot/internal/replybot"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/op/go-logging"
 )
-
-var log = logging.MustGetLogger("example")
 
 type Configuration struct {
 	Token string
 }
 
-func readJSON() string {
-	c := flag.String("c", "config.json", "Specify the configuration file.")
-	flag.Parse()
-	file, err := os.Open(*c)
-	if err != nil {
-		log.Error("can't open config file: ", err)
-	}
-	defer file.Close()
-	decoder := json.NewDecoder(file)
-	Config := Configuration{}
-	err = decoder.Decode(&Config)
-	if err != nil {
-		log.Fatal("can't decode config JSON: ", err)
-	}
-	return Config.Token
-}
-
 func main() {
 	token := readJSON()
+	log.SetupLogger()
 
 	client, err := discordgo.New("Bot " + token)
 
@@ -63,6 +45,23 @@ func main() {
 	<-sc
 
 	client.Close()
+}
+
+func readJSON() string {
+	c := flag.String("c", "config.json", "Specify the configuration file.")
+	flag.Parse()
+	file, err := os.Open(*c)
+	if err != nil {
+		log.ERROR.Println("can't open config file: ", err)
+	}
+	defer file.Close()
+	decoder := json.NewDecoder(file)
+	Config := Configuration{}
+	err = decoder.Decode(&Config)
+	if err != nil {
+		log.ERROR.Println("can't decode config JSON: ", err)
+	}
+	return Config.Token
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {

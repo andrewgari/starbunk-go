@@ -2,8 +2,8 @@ package replybot
 
 import (
 	"golang-discord-bot/internal/config"
+	"golang-discord-bot/internal/log"
 	"golang-discord-bot/internal/webhook"
-	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -47,17 +47,25 @@ func (b BluBot) AvatarURL() string {
 func (b BluBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	channelID := message.ChannelID
 	if strings.Contains(message.Content, "blu") {
-		log.Default().Println("Running BlueBot HandleMessage")
+		log.INFO.Println("Running BlueBot HandleMessage")
 		webhook.WriteMessage(session, channelID, "Did somebody say BLU?", b.ObserverName(), b.AvatarURL())
 	} else if isRequestToSayBlu(message.Content) {
 		getNameFromBluRequest(message.Content, message.Author.Username)
 	}
 }
 
+func didSomebodySayBlu(message string) bool {
+	regex, err := regexp.MatchString(defaultPattern, message)
+	if err != nil {
+
+	}
+	return regex
+}
+
 func isRequestToSayBlu(message string) bool {
 	match, err := regexp.MatchString(nicePattern, message)
 	if err != nil {
-		log.Fatal("Error Parsing Message: ", err)
+		log.ERROR.Println("Error Parsing Message: ", err)
 	}
 	return match
 }
@@ -65,7 +73,7 @@ func isRequestToSayBlu(message string) bool {
 func getNameFromBluRequest(message, author string) string {
 	regex, err := regexp.Compile(nicePattern)
 	if err != nil {
-		log.Fatal("Error Parsing Message: ", err)
+		log.ERROR.Println("Error Parsing Message: ", err)
 	}
 	var matches = regex.FindStringSubmatch(message)
 	var index = regex.SubexpIndex("name")
@@ -90,7 +98,7 @@ func isVennInsultingBlu(message, authorID string) bool {
 	if authorID == config.UserIDs["venn"] {
 		match, err := regexp.MatchString(meanPattern, message)
 		if err != nil {
-			log.Fatal("Error Parsing Message: ", err)
+			log.ERROR.Println("Error Parsing Message: ", err)
 		}
 		return match
 	}
