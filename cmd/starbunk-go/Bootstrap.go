@@ -3,6 +3,7 @@ package main
 import (
 	"starbunk-bot/internal/bot/command"
 	"starbunk-bot/internal/bot/reply"
+	"starbunk-bot/internal/bot/voice"
 	"starbunk-bot/internal/config"
 	"starbunk-bot/internal/observer"
 )
@@ -41,4 +42,22 @@ func RegisterReplyBots() {
 func RegisterCommandBots() {
 	var clearWebhooks command.ICommandBot = command.ClearWebhooks{Command: "clearWebhooks", GuildID: config.GuildIDs["BLU"]}
 	observer.CommandBots["clearWebhooks"] = clearWebhooks
+}
+
+func RegisterVoiceBots() {
+	var guyBot observer.IVoiceObserver = voice.GuyChannelBot{
+		GuysID:           config.UserIDs["Guy"],
+		GuysChannelID:    config.ChannelIDs["OnlyGuy"],
+		NotGuysChannelID: config.ChannelIDs["NoGuy"],
+		LoungeId:         config.ChannelIDs["Lounge"],
+		GuildID:          config.GuildIDs["Starbunk"],
+	}
+	type GuyChannelBot struct {
+		GuysID           string
+		GuysChannelID    string
+		NotGuysChannelID string
+		LoungeId         string
+		GuildID          string
+	}
+	observer.VoiceService.AddObserver(guyBot)
 }

@@ -26,5 +26,6 @@ var ChannelIDs = map[string]string{
 }
 
 var GuildIDs = map[string]string{
-	"BLU": "757866614787014656",
+	"BLU":      "757866614787014656",
+	"Starbunk": "753251582719688714",
 }

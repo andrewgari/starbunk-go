@@ -28,6 +28,7 @@ func main() {
 		return
 	}
 	observer.MessageService = observer.MessagePublisher{Observers: make(map[string]observer.IMessageObserver)}
+	observer.VoiceService = observer.VoicePublisher{Observers: make(map[string]observer.IVoiceObserver)}
 	client.AddHandler(onMessageCreate)
 	client.AddHandler(onUserVoiceStateChange)
 	RegisterCommandBots()
@@ -76,5 +77,5 @@ func onUserVoiceStateChange(s *discordgo.Session, v *discordgo.VoiceStateUpdate)
 	if s.State.User.ID == v.UserID {
 		return
 	}
-
+	observer.VoiceService.Broadcast(s, *v)
 }

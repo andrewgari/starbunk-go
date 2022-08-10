@@ -12,6 +12,8 @@ func (p VoicePublisher) AddObserver(observer IVoiceObserver) {
 	p.Observers[observer.ObserverName()] = observer
 }
 
-func (p VoicePublisher) HandleVoiceStateChange(session *discordgo.Session, event *discordgo.VoiceStateUpdate) {
-
+func (p VoicePublisher) Broadcast(session *discordgo.Session, event discordgo.VoiceStateUpdate) {
+	for _, observer := range p.Observers {
+		observer.HandleVoiceStateChange(session, event)
+	}
 }
