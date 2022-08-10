@@ -22,7 +22,7 @@ func (c ClearWebhooks) IsValidCommand(message string) bool {
 
 func (c ClearWebhooks) ProcessMessage(session *discordgo.Session, message discordgo.Message) {
 	if message.Member.Permissions&discordgo.PermissionAdministrator == 0 { // admin command only
-		var webhooks, err = session.GuildWebhooks(config.GuildIDs["BLU"])
+		var webhooks, err = session.GuildWebhooks(config.GuildIDs["Starbunk"])
 		if err != nil {
 			log.ERROR.Println("Error Getting Webhooks", err)
 		}

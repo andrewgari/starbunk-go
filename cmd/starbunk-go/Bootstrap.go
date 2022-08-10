@@ -5,6 +5,7 @@ import (
 	"starbunk-bot/internal/bot/reply"
 	"starbunk-bot/internal/bot/voice"
 	"starbunk-bot/internal/config"
+	"starbunk-bot/internal/log"
 	"starbunk-bot/internal/observer"
 )
 
@@ -40,11 +41,12 @@ func RegisterReplyBots() {
 }
 
 func RegisterCommandBots() {
-	var clearWebhooks command.ICommandBot = command.ClearWebhooks{Command: "clearWebhooks", GuildID: config.GuildIDs["BLU"]}
+	var clearWebhooks command.ICommandBot = command.ClearWebhooks{Command: "clearWebhooks", GuildID: config.GuildIDs["Starbunk"]}
 	observer.CommandBots["clearWebhooks"] = clearWebhooks
 }
 
 func RegisterVoiceBots() {
+	log.WARN.Println("Adding Voice Bots")
 	var guyBot observer.IVoiceObserver = voice.GuyChannelBot{
 		GuysID:           config.UserIDs["Guy"],
 		GuysChannelID:    config.ChannelIDs["OnlyGuy"],
@@ -60,4 +62,12 @@ func RegisterVoiceBots() {
 		GuildID          string
 	}
 	observer.VoiceService.AddObserver(guyBot)
+	var feliBot observer.IVoiceObserver = voice.FeliBot{
+		Name:            "FeliBot",
+		FeliID:          config.UserIDs["Cova"],
+		GuildID:         config.GuildIDs["Starbunk"],
+		AFK_ID:          config.ChannelIDs["AFK"],
+		WhaleWatchersID: config.ChannelIDs["WhaleWatchers"],
+	}
+	observer.VoiceService.AddObserver(feliBot)
 }

@@ -29,11 +29,12 @@ func main() {
 	}
 	observer.MessageService = observer.MessagePublisher{Observers: make(map[string]observer.IMessageObserver)}
 	observer.VoiceService = observer.VoicePublisher{Observers: make(map[string]observer.IVoiceObserver)}
+	client.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentGuildVoiceStates
 	client.AddHandler(onMessageCreate)
 	client.AddHandler(onUserVoiceStateChange)
 	RegisterCommandBots()
 	RegisterReplyBots()
-	client.Identify.Intents = discordgo.IntentsGuildMessages
+	RegisterVoiceBots()
 
 	err = client.Open()
 	if err != nil {
