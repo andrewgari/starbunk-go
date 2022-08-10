@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -18,7 +16,7 @@ type Configuration struct {
 }
 
 func main() {
-	token := readJSON()
+	token := os.Getenv("TOKEN")
 	log.SetupLogger()
 
 	client, err := discordgo.New("Bot " + token)
@@ -48,23 +46,6 @@ func main() {
 	<-sc
 
 	client.Close()
-}
-
-func readJSON() string {
-	c := flag.String("c", "config.json", "Specify the configuration file.")
-	flag.Parse()
-	file, err := os.Open(*c)
-	if err != nil {
-		log.ERROR.Println("can't open config file: ", err)
-	}
-	defer file.Close()
-	decoder := json.NewDecoder(file)
-	Config := Configuration{}
-	err = decoder.Decode(&Config)
-	if err != nil {
-		log.ERROR.Println("can't decode config JSON: ", err)
-	}
-	return Config.Token
 }
 
 func onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {

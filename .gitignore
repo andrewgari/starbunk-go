@@ -16,3 +16,4 @@ go.work
 config.json
 .vscode
 *.toml
+docker.env

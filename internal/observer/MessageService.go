@@ -22,7 +22,7 @@ func (p MessagePublisher) AddObserver(observer IMessageObserver) {
 
 // broadcast implements bot.IMessagePublisher
 func (p MessagePublisher) Broadcast(session *discordgo.Session, message discordgo.Message) {
-	if message.Content[:1] == "?" {
+	if len(message.Content) > 0 && message.Content[0:1] == "?" {
 		log.INFO.Println("Got Command, ", message.Content)
 		command := strings.Split(message.Content, " ")[0]
 		command = strings.TrimPrefix(command, "?")
