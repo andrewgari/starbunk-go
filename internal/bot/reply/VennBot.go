@@ -25,8 +25,17 @@ func (b VennBot) Response() string {
 
 func (b VennBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	if message.Author.ID == b.ID && utils.Roll20(15) {
-		var avatarUrl = message.Member.AvatarURL("")
-		var username = message.Member.Nick
+		var avatarUrl = ""
+		var username = ""
+		var vennAsMember = message.Member
+		if vennAsMember == nil {
+			var vennAsUser = message.Author
+			avatarUrl = vennAsUser.AvatarURL("")
+			username = vennAsUser.Username
+		} else {
+			avatarUrl = vennAsMember.AvatarURL("")
+			username = vennAsMember.Nick
+		}
 		webhook.WriteMessage(session, message.ChannelID, b.Response(), username, avatarUrl)
 	}
 }

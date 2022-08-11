@@ -12,7 +12,6 @@ import (
 
 type SheeshBot struct {
 	Name string
-	ID   string
 }
 
 func (b SheeshBot) ObserverName() string {
@@ -32,7 +31,7 @@ func (b SheeshBot) Response() string {
 }
 
 func (b SheeshBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
-	if utils.Match(b.Pattern(), message.Content) || message.Author.ID == b.ID {
+	if utils.Match(b.Pattern(), message.Content) {
 		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.Name, b.AvatarURL())
 	}
 }

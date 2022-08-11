@@ -2,6 +2,7 @@ version: '2'
 
 services:
   bunkbot:
+    image: starbunk/bunkbot
     container_name: bunk-bot
     build: 
       context: .

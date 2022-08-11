@@ -107,7 +107,7 @@ func (b BluBot) isResponseToBlu(message discordgo.Message, selfID string) bool {
 }
 
 func (b BluBot) isVennInsultingBlu(message, authorID string) bool {
-	if authorID == b.ID && bluMurderTimestamp.UTC().Day() < time.Now().Day() && utils.Match(meanPattern, message) {
+	if authorID == b.ID && bluMurderTimestamp.UTC().Day() < time.Now().UTC().Day() && utils.Match(meanPattern, message) {
 		return true
 	}
 	return false

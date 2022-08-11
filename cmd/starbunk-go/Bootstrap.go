@@ -28,7 +28,7 @@ func RegisterReplyBots() {
 	observer.MessageService.AddObserver(macaroniBot)
 	var pickleBot observer.IMessageObserver = reply.PickleBot{Name: "GremlinBot", ID: config.UserIDs["Sig"]}
 	observer.MessageService.AddObserver(pickleBot)
-	var sheeshBot observer.IMessageObserver = reply.SheeshBot{Name: "SheeshBot", ID: config.UserIDs["Guy"]}
+	var sheeshBot observer.IMessageObserver = reply.SheeshBot{Name: "SheeshBot"}
 	observer.MessageService.AddObserver(sheeshBot)
 	var sixtyNineBot observer.IMessageObserver = reply.SixtyNineBot{Name: "CovaBot"}
 	observer.MessageService.AddObserver(sixtyNineBot)
@@ -64,7 +64,7 @@ func RegisterVoiceBots() {
 	observer.VoiceService.AddObserver(guyBot)
 	var feliBot observer.IVoiceObserver = voice.FeliBot{
 		Name:            "FeliBot",
-		FeliID:          config.UserIDs["Cova"],
+		FeliID:          config.UserIDs["Feli"],
 		GuildID:         config.GuildIDs["Starbunk"],
 		AFK_ID:          config.ChannelIDs["AFK"],
 		WhaleWatchersID: config.ChannelIDs["WhaleWatchers"],
