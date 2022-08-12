@@ -11,6 +11,9 @@ services:
       - docker.env
   musicbot:
     container_name: music-bot
-    image: eritislami/evobot
+    image: starbunk/musicbot
+    build: 
+      context: .
+      dockerfile: Dockerfile.Music
     env_file:
       - docker.env

@@ -1,0 +1,3 @@
+FROM justsomebots/musicbot:master
+COPY options.ini .
+COPY options.ini config/.

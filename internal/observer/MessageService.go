@@ -34,6 +34,6 @@ func (p MessagePublisher) Broadcast(session *discordgo.Session, message discordg
 		}
 	}
 	for _, observer := range p.Observers {
-		observer.HandleMessage(session, message)
+		go observer.HandleMessage(session, message)
 	}
 }
