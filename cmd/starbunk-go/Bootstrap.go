@@ -23,7 +23,7 @@ func RegisterReplyBots() {
 	observer.MessageService.AddObserver(reply.SixtyNineBot{Name: "CovaBot"})
 	observer.MessageService.AddObserver(reply.SoggyBot{Name: "SoggyBot", Role: config.RoleIDs["WetBread"]})
 	observer.MessageService.AddObserver(reply.SpiderBot{Name: "Spider-Bot"})
-	observer.MessageService.AddObserver(reply.VennBot{ID: config.UserIDs["Venn"]})
+	observer.MessageService.AddObserver(reply.VennBot{GuildID: config.GuildIDs["Starbunk"], UserID: config.UserIDs["Venn"]})
 }
 
 func RegisterCommandBots() {

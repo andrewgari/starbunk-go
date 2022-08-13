@@ -7,7 +7,8 @@ var UserIDs = map[string]string{
 	"Sig":     "486516247576444928",
 	"Guy":     "113035990725066752",
 	"Guildus": "113776144012148737",
-	"Deaf":    "120263103366692868",
+	"Deaf":    "115631499344216066",
+	"Feli":    "120263103366692868",
 }
 
 var RoleIDs = map[string]string{
