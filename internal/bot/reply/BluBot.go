@@ -81,7 +81,7 @@ func (b BluBot) isRequestToSayBlu(message string) bool {
 }
 
 func (b BluBot) getNameFromBluRequest(message, author string) string {
-	regex, err := regexp.Compile(nicePattern)
+	regex, err := regexp.Compile("(?i)" + nicePattern)
 	if err != nil {
 		log.ERROR.Println("Error Parsing Message: ", err)
 	}

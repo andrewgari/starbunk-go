@@ -19,3 +19,6 @@ config.json
 docker.env
 options.ini
 config/config.txt
+Dockerfile.connecty
+config.ini
+config.txt
