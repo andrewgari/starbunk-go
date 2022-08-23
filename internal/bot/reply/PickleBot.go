@@ -29,7 +29,7 @@ func (b PickleBot) Response() string {
 }
 
 func (b PickleBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
-	if utils.Match(b.Pattern(), message.Content) || (message.Author.ID == b.ID && utils.Roll20(15)) {
+	if utils.Match(b.Pattern(), message.Content) || (message.Author.ID == b.ID && utils.PercentChance(20)) {
 		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.Name, b.AvatarURL())
 	}
 }

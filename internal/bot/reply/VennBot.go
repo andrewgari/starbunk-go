@@ -26,7 +26,7 @@ func (b VennBot) Response() string {
 }
 
 func (b VennBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
-	if message.Author.ID == b.UserID && utils.Roll20(15) {
+	if message.Author.ID == b.UserID && utils.PercentChance(20) {
 		var username, avatarURL string
 		var member, error = session.GuildMember(b.GuildID, b.UserID)
 		if error != nil {

@@ -24,8 +24,9 @@ func Contains(s []string, e string) bool {
 	return false
 }
 
-func Roll20(target int) bool {
+func PercentChance(target int) bool {
 	rand.Seed(time.Now().UnixNano())
-	var roll = rand.Intn(20-1) + 1
-	return roll >= target
+	var roll = rand.Intn(100)
+	log.INFO.Printf("Rolled a Percent Chance: %d", roll)
+	return roll < target
 }
