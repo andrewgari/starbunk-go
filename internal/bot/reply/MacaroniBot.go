@@ -26,7 +26,7 @@ var (
 	vennPattern      string = "\\bvenn\\b"
 	macaroniPattern  string = "\\bmacaroni\\b"
 	vennResponse     string = `Correction: you mean Venn "Tyrone "The "Macaroni" Man" Johnson" Caelum`
-	macaroniResponse string = "Are you trying to reach <@&%s}>"
+	macaroniResponse string = "Are you trying to reach <@&%s>"
 )
 
 func (b MacaroniBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {

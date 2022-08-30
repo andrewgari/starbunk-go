@@ -1,16 +1,18 @@
 package reply
 
 import (
-	"starbunk-bot/internal/log"
+	"math/rand"
 	"starbunk-bot/internal/utils"
 	"starbunk-bot/internal/webhook"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
 
 type VennBot struct {
-	UserID  string
-	GuildID string
+	UserID    string
+	GuildID   string
+	Responses []string
 }
 
 func (b VennBot) ObserverName() string {
@@ -22,20 +24,26 @@ func (b VennBot) AvatarURL() string {
 }
 
 func (b VennBot) Response() string {
-	return "Sorry, but that was über cringe..."
+	rand.Seed(time.Now().UnixNano())
+	var roll = rand.Intn(len(b.Responses))
+	response := b.Responses[roll]
+	return response
 }
 
 func (b VennBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	if message.Author.ID == b.UserID && utils.PercentChance(20) {
-		var username, avatarURL string
-		var member, error = session.GuildMember(b.GuildID, b.UserID)
-		if error != nil {
-			log.ERROR.Println("Error getting avatar url from guild", error)
-			avatarURL = message.Author.AvatarURL("")
-			username = message.Author.Username
-		} else {
-			avatarURL = member.AvatarURL("")
-			username = member.Nick
+		var username = message.Author.Username
+		var avatarURL = message.Author.AvatarURL("")
+		var member, error = session.GuildMember(b.GuildID, message.Author.ID)
+		if error == nil {
+			memberURL := member.AvatarURL("")
+			memberNick := member.Nick
+			if len(memberNick) > 0 {
+				username = memberNick
+			}
+			if len(memberURL) > 0 {
+				avatarURL = memberURL
+			}
 		}
 		webhook.WriteMessage(session, message.ChannelID, b.Response(), username, avatarURL)
 	}

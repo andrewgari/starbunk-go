@@ -23,13 +23,32 @@ func RegisterReplyBots() {
 	observer.MessageService.AddObserver(reply.SixtyNineBot{Name: "CovaBot"})
 	observer.MessageService.AddObserver(reply.SoggyBot{Name: "SoggyBot", Role: config.RoleIDs["WetBread"]})
 	observer.MessageService.AddObserver(reply.SpiderBot{Name: "Spider-Bot"})
-	observer.MessageService.AddObserver(reply.VennBot{GuildID: config.GuildIDs["Starbunk"], UserID: config.UserIDs["Venn"]})
+	vennResponses := make([]string, 0)
+	vennResponses = append(vennResponses,
+		"Sorry, but that was über cringe...",
+		"Geez, that was hella cringe...",
+		"That was cringe to the max...",
+		"What a cringe thing to say...",
+		"Mondo cringe, man...",
+		"Yo that was the cringiest thing I've ever heard...",
+		"Your daily serving of cringe, milord...",
+		"On a scale of one to cringe, that was pretty cringe...",
+		"That was pretty cringe :airplane:",
+		"Wow, like....cringe much?",
+		"Excuse me, I seem to have dropped my cringe. Do you have it perchance?",
+		"Like I always say, that was pretty cringe...",
+	)
+	observer.MessageService.AddObserver(reply.VennBot{GuildID: config.GuildIDs["Starbunk"], UserID: config.UserIDs["Venn"], Responses: vennResponses})
 }
 
 func RegisterCommandBots() {
 	observer.CommandBots["clearWebhooks"] = command.ClearWebhooks{Command: "clearWebhooks", GuildID: config.GuildIDs["Starbunk"]}
-	observer.CommandBots["play"] = command.MusicCorrect{Command: "play"}
-	observer.CommandBots["covaPlay"] = command.MusicCorrect{Command: "covaPlay"}
+	observer.CommandBots["nebula"] =
+		command.NebulaBot{
+			Command:        "nebula",
+			NebulaLeadRole: config.RoleIDs["NebulaLead"],
+			AllowedRoles:   map[string]string{"Nebula": config.RoleIDs["Nebula"], "NebulaGuest": config.RoleIDs["NebulaGuest"], "NebulaAlum": config.RoleIDs["NebulaAlum"]},
+		}
 }
 
 func RegisterVoiceBots() {

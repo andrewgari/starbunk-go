@@ -12,8 +12,13 @@ var UserIDs = map[string]string{
 }
 
 var RoleIDs = map[string]string{
-	"Macaroni": "836680699217444924",
-	"WetBread": "204326753215315968",
+	"Macaroni":    "836680699217444924",
+	"WetBread":    "204326753215315968",
+	"NebulaLead":  "925957014587322438",
+	"Nebula":      "925955892212535346",
+	"NebulaGuest": "975189726959120384",
+	"NebulaAlum":  "1010737828780589086",
+	"Co-Lead":     "753251582732271680",
 }
 
 var ChannelIDs = map[string]string{
@@ -27,6 +32,7 @@ var ChannelIDs = map[string]string{
 }
 
 var GuildIDs = map[string]string{
-	"BLU":      "757866614787014656",
-	"Starbunk": "753251582719688714",
+	"BLU":              "757866614787014656",
+	"Starbunk-Staging": "856617421427441674",
+	"Starbunk":         "753251582719688714",
 }
