@@ -11,6 +11,7 @@ func Match(pattern string, s string) bool {
 	match, err := regexp.MatchString("(?i)"+pattern, s)
 	if err != nil {
 		log.ERROR.Println("Error Parsing Message: ", err)
+		return false
 	}
 	return match
 }

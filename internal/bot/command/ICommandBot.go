@@ -12,7 +12,7 @@ type ICommandBot interface {
 	ProcessMessage(session *discordgo.Session, message discordgo.Message)
 }
 
-const CommandCharacter string = "?"
+const CommandCharacter string = "!"
 
 func isValidCommand(cmdWord string, message string) bool {
 	return strings.HasPrefix(message, CommandCharacter+cmdWord)
