@@ -112,19 +112,12 @@ func (c NebulaBot) sendFunctionNotice(session *discordgo.Session, add bool, chan
 		function = "removed"
 	}
 
-	var preposition string = ""
-	if add {
-		function = "to"
-	} else {
-		function = "from"
-	}
-
-	_, err := session.ChannelMessageSend(
-		channelID,
-		fmt.Sprintf(
-			"<@%s> has %s the <@&%s> role %s <@%s>",
-			callerID, function, roleID, preposition, memberID))
-	if err != nil {
-		log.ERROR.Println("Error adding Nebula Roles")
+	if function == "added" {
+		_, err := session.ChannelMessageSend(
+			channelID,
+			fmt.Sprintf("<@%s> has added the <@&%s> role to <@%s>", callerID, roleID, memberID))
+		if err != nil {
+			log.ERROR.Println("Error adding Nebula Roles")
+		}
 	}
 }

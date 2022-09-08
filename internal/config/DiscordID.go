@@ -25,6 +25,7 @@ var ChannelIDs = map[string]string{
 	"WhaleWatchers":       "767836161619525652",
 	"NebulaAnnouncements": "925956838036475974",
 	"NebulaChat":          "925956744478343218",
+	"NebulaBunker":        "925957329843798016",
 	"Lounge":              "754401194788520047",
 	"NoGuy":               "987456522969841824",
 	"OnlyGuy":             "989524799044862022",

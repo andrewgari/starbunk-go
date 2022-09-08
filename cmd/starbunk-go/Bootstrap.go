@@ -37,6 +37,7 @@ func RegisterReplyBots() {
 		"Wow, like....cringe much?",
 		"Excuse me, I seem to have dropped my cringe. Do you have it perchance?",
 		"Like I always say, that was pretty cringe...",
+		"C.R.I.N.G.E",
 	)
 	observer.MessageService.AddObserver(reply.VennBot{GuildID: config.GuildIDs["Starbunk"], UserID: config.UserIDs["Venn"], Responses: vennResponses})
 }
@@ -48,6 +49,13 @@ func RegisterCommandBots() {
 			Command:        "nebula",
 			NebulaLeadRole: config.RoleIDs["NebulaLead"],
 			AllowedRoles:   map[string]string{"Nebula": config.RoleIDs["Nebula"], "NebulaGuest": config.RoleIDs["NebulaGuest"], "NebulaAlum": config.RoleIDs["NebulaAlum"]},
+		}
+	observer.CommandBots["scheduleRaid"] =
+		command.CreateEventBot{
+			Command:             "scheduleRaid",
+			NebulaLeadRole:      config.RoleIDs["NebulaLead"],
+			NebulaAnnouncements: config.ChannelIDs["NebulaAnnouncements"],
+			NebulaBunker:        config.ChannelIDs["NebulaBunker"],
 		}
 }
 
