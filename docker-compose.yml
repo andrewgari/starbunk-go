@@ -3,7 +3,7 @@ version: '2'
 services:
   bunkbot:
     image: starbunk/bunkbot
-    container_name: bunkbot
+    container_name: bunk-bot
     restart: unless-stopped
     build: 
       context: .
