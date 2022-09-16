@@ -6,37 +6,51 @@ import (
 	"os/signal"
 	"starbunk-bot/internal/log"
 	"starbunk-bot/internal/observer"
+	"starbunk-bot/internal/snowbunk"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
 )
 
 type Configuration struct {
-	Token string
+	StarbunkToken string
+	SnowbunkToken string
 }
 
 func main() {
-	token := os.Getenv("TOKEN")
+	starbunk_token := os.Getenv("STARBUNK_TOKEN")
+	snowbunk_token := os.Getenv("SNOWBUNK_TOKEN") // treated as a separate bot so snowfall doesn't get blasts with my crap
 	log.SetupLogger()
 
-	client, err := discordgo.New("Bot " + token)
+	starbunkClient, err := discordgo.New("Bot " + starbunk_token)
+	snowbunkClient, err2 := discordgo.New("Bot " + snowbunk_token)
 
-	if err != nil {
+	if err != nil || err2 != nil {
 		fmt.Println("Error Creating Discord Session", err)
 		return
 	}
 	observer.MessageService = observer.MessagePublisher{Observers: make(map[string]observer.IMessageObserver)}
 	observer.VoiceService = observer.VoicePublisher{Observers: make(map[string]observer.IVoiceObserver)}
-	client.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentGuildVoiceStates
-	client.AddHandler(onMessageCreate)
-	client.AddHandler(onUserVoiceStateChange)
+	snowbunk.MessageSyncService = snowbunk.SnowbunkService{}
+
+	starbunkClient.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentGuildVoiceStates
+	starbunkClient.AddHandler(onMessageCreate)
+	starbunkClient.AddHandler(onUserVoiceStateChange)
+
+	snowbunkClient.AddHandler(onSnowbunkMessageCreate)
+
 	RegisterCommandBots()
 	RegisterReplyBots()
 	RegisterVoiceBots()
 
-	err = client.Open()
+	err = starbunkClient.Open()
+	err2 = snowbunkClient.Open()
 	if err != nil {
 		fmt.Println("Error Opening Connection, ", err)
+		return
+	}
+	if err2 != nil {
+		fmt.Println("Error Opening Snowbunk Connection, ", err)
 		return
 	}
 
@@ -45,7 +59,8 @@ func main() {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
 
-	client.Close()
+	starbunkClient.Close()
+	snowbunkClient.Close()
 }
 
 func onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -53,6 +68,13 @@ func onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	observer.MessageService.Broadcast(s, *m.Message)
+}
+
+func onSnowbunkMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if m.Author.Bot {
+		return
+	}
+	snowbunk.MessageSyncService.SyncMessage(s, *m.Message)
 }
 
 func onUserVoiceStateChange(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {

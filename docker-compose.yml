@@ -3,8 +3,8 @@ version: '2'
 services:
   bunkbot:
     image: starbunk/bunkbot
-    container_name: bunk-bot
-    restart: always
+    container_name: bunkbot
+    restart: unless-stopped
     build: 
       context: .
       dockerfile: Dockerfile
@@ -12,16 +12,7 @@ services:
       - docker.env
   musicbot:
     image: craumix/jmusicbot
-    container_name: jmusicbot
+    container_name: dj-cova
     restart: unless-stopped
     volumes:
-     - C:\Users\Covad\workspace\golang\golang-discord-bot\config:/jmb/config
-  snowbunk:
-    image: starbunk/connecty
-    container_name: connecty
-    restart: unless-stopped
-    volumes:
-      - C:\Docker\Starbunk\Connecty:/etc/starbunk/connecty
-    build: 
-      context: . 
-      dockerfile: Dockerfile.connecty
+     - ~/docker/starbunk/config:/jmb/config/
