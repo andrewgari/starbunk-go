@@ -31,9 +31,9 @@ var (
 
 func (b MacaroniBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	if utils.Match(vennPattern, message.Content) {
-		webhook.WriteMessage(session, message.ChannelID, vennResponse, b.Name, b.AvatarURL())
+		webhook.WriteMessage(session, message.ChannelID, vennResponse, b.Name, b.AvatarURL(), nil)
 	}
 	if utils.Match(macaroniPattern, message.Content) {
-		webhook.WriteMessage(session, message.ChannelID, fmt.Sprintf(macaroniResponse, b.ID), b.Name, b.AvatarURL())
+		webhook.WriteMessage(session, message.ChannelID, fmt.Sprintf(macaroniResponse, b.ID), b.Name, b.AvatarURL(), nil)
 	}
 }

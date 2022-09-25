@@ -31,6 +31,6 @@ func (b EzioBot) Pattern() string {
 
 func (b EzioBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	if message.Author.ID == b.ID && utils.Match(b.Pattern(), message.Content) {
-		webhook.WriteMessage(session, message.ChannelID, fmt.Sprintf(b.Response(), b.ID), b.Name, b.AvatarURL())
+		webhook.WriteMessage(session, message.ChannelID, fmt.Sprintf(b.Response(), b.ID), b.Name, b.AvatarURL(), nil)
 	}
 }

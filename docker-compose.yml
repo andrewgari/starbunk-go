@@ -16,3 +16,11 @@ services:
     restart: unless-stopped
     volumes:
      - ~/docker/starbunk/config:/jmb/config/
+  # connecty:
+  #   image: starbunk/connecty
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.connecty
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ~./docker/starbunk/config/connecty/config.ini:/etc/starbunk/connecty/config.ini

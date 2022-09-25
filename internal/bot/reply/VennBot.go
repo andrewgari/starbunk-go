@@ -45,6 +45,6 @@ func (b VennBot) HandleMessage(session *discordgo.Session, message discordgo.Mes
 				avatarURL = memberURL
 			}
 		}
-		webhook.WriteMessage(session, message.ChannelID, b.Response(), username, avatarURL)
+		webhook.WriteMessage(session, message.ChannelID, b.Response(), username, avatarURL, nil)
 	}
 }

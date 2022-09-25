@@ -12,18 +12,20 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type Configuration struct {
-	StarbunkToken string
-	SnowbunkToken string
+type BotConfig struct {
+	Token string
 }
 
+var starbunkConfig BotConfig
+var snowbunkConfig BotConfig
+
 func main() {
-	starbunk_token := os.Getenv("STARBUNK_TOKEN")
-	snowbunk_token := os.Getenv("SNOWBUNK_TOKEN") // treated as a separate bot so snowfall doesn't get blasts with my crap
+	starbunkConfig = BotConfig{Token: os.Getenv("STARBUNK_TOKEN")}
+	snowbunkConfig = BotConfig{Token: os.Getenv("SNOWBUNK_TOKEN")}
 	log.SetupLogger()
 
-	starbunkClient, err := discordgo.New("Bot " + starbunk_token)
-	snowbunkClient, err2 := discordgo.New("Bot " + snowbunk_token)
+	starbunkClient, err := discordgo.New("Bot " + starbunkConfig.Token)
+	snowbunkClient, err2 := discordgo.New("Bot " + snowbunkConfig.Token)
 
 	if err != nil || err2 != nil {
 		fmt.Println("Error Creating Discord Session", err)
@@ -31,7 +33,7 @@ func main() {
 	}
 	observer.MessageService = observer.MessagePublisher{Observers: make(map[string]observer.IMessageObserver)}
 	observer.VoiceService = observer.VoicePublisher{Observers: make(map[string]observer.IVoiceObserver)}
-	snowbunk.MessageSyncService = snowbunk.SnowbunkService{}
+	snowbunk.MessageSyncService = snowbunk.SnowbunkService{StarbunkToken: starbunkConfig.Token, SnowbunkToken: snowbunkConfig.Token}
 
 	starbunkClient.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentGuildVoiceStates
 	starbunkClient.AddHandler(onMessageCreate)

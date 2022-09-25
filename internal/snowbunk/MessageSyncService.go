@@ -1,6 +1,7 @@
 package snowbunk
 
 import (
+	"starbunk-bot/internal/discord"
 	"starbunk-bot/internal/log"
 	"starbunk-bot/internal/webhook"
 
@@ -8,9 +9,6 @@ import (
 )
 
 var MessageSyncService ISnowbunkMessageHandler
-
-var StarbunkID string = "753251582719688714"
-var SnowfallID string = "696689954759245915"
 
 var channelList map[string][]string = map[string][]string{
 	"757866614787014660": {"856617421942030364", "798613445301633137"}, // testing
@@ -42,7 +40,10 @@ var channelList map[string][]string = map[string][]string{
 	"755578835122126898": {"696948305586028544"}, // pets
 }
 
-type SnowbunkService struct{}
+type SnowbunkService struct {
+	StarbunkToken string
+	SnowbunkToken string
+}
 
 func (snowservice SnowbunkService) SyncMessage(session *discordgo.Session, message discordgo.Message) {
 	var originChannel, err = session.Channel(message.ChannelID)
@@ -63,29 +64,14 @@ func (snowservice SnowbunkService) SyncMessage(session *discordgo.Session, messa
 }
 
 func (snowservice SnowbunkService) WriteMessage(session *discordgo.Session, message discordgo.Message, originChannel *discordgo.Channel, linkedChannel *discordgo.Channel) {
-	var info, err = GetMemberInfo(session, message.Author.ID, linkedChannel.GuildID)
-	if err != nil {
-		log.INFO.Println("Can't Find User At Linked Server")
-		info, err = GetMemberInfo(session, message.Author.ID, originChannel.GuildID)
-		if err != nil {
+	var info, err = discord.GetMemberInfo(session, message.Author.ID, linkedChannel.GuildID)
+	if err != nil || info.DisplayName == "" {
+		log.WARN.Println("Can't find Member Info at Linked Server")
+		info, err = discord.GetMemberInfo(session, message.Author.ID, originChannel.GuildID)
+		if err != nil || info.DisplayName == "" {
 			log.WARN.Println("Can't Find User At Origin Server")
-			info = DiscordMemberInfo{UserID: message.Author.ID, DisplayName: message.Author.Username, AvatarURL: message.Author.AvatarURL("")}
+			info = discord.DiscordMemberInfo{UserID: message.Author.ID, DisplayName: message.Author.Username, AvatarURL: message.Author.AvatarURL("")}
 		}
 	}
-	webhook.WriteMessage(session, linkedChannel.ID, message.Content, info.DisplayName, info.AvatarURL)
-}
-
-type DiscordMemberInfo struct {
-	UserID      string
-	DisplayName string
-	AvatarURL   string
-}
-
-func GetMemberInfo(session *discordgo.Session, userID string, guildID string) (DiscordMemberInfo, error) {
-	var guildMember, err = session.GuildMember(guildID, userID)
-	// if they don't have a nickname, error?
-	if err != nil {
-		log.WARN.Println("Can't find member info from Server", err)
-	}
-	return DiscordMemberInfo{UserID: userID, DisplayName: guildMember.Nick, AvatarURL: guildMember.AvatarURL("")}, err
+	webhook.WriteMessage(session, linkedChannel.ID, message.Content, info.DisplayName, info.AvatarURL, message.Attachments)
 }
