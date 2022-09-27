@@ -66,10 +66,8 @@ func (snowservice SnowbunkService) SyncMessage(session *discordgo.Session, messa
 func (snowservice SnowbunkService) WriteMessage(session *discordgo.Session, message discordgo.Message, originChannel *discordgo.Channel, linkedChannel *discordgo.Channel) {
 	var info, err = discord.GetMemberInfo(session, message.Author.ID, linkedChannel.GuildID)
 	if err != nil || info.DisplayName == "" {
-		log.WARN.Println("Can't find Member Info at Linked Server")
 		info, err = discord.GetMemberInfo(session, message.Author.ID, originChannel.GuildID)
 		if err != nil || info.DisplayName == "" {
-			log.WARN.Println("Can't Find User At Origin Server")
 			info = discord.DiscordMemberInfo{UserID: message.Author.ID, DisplayName: message.Author.Username, AvatarURL: message.Author.AvatarURL("")}
 		}
 	}

@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"fmt"
+	"starbunk-bot/internal/discord"
 	"starbunk-bot/internal/log"
 
 	"github.com/bwmarrin/discordgo"
@@ -21,7 +22,6 @@ func GetWebhook(session *discordgo.Session, channelID, token string) (*discordgo
 	}
 	for _, webhook := range webhooks {
 		if webhook.ChannelID == channelID && webhook.Name == channelName {
-			log.INFO.Println("Webhook Token: ", webhook.Token)
 			return webhook, nil
 		}
 	}
@@ -37,14 +37,19 @@ func GetWebhook(session *discordgo.Session, channelID, token string) (*discordgo
 
 }
 
-func WriteMessage(session *discordgo.Session, channelID, content, nickname, avatarURL string, attatchments []*discordgo.MessageAttachment) {
+func WriteMessage(session *discordgo.Session, channelID, content, nickname, avatarURL string, attachments []*discordgo.MessageAttachment) {
 	var webhook, err1 = GetWebhook(session, channelID, session.Token)
 	if err1 != nil {
 		log.ERROR.Println("Error Creating Webhook for channel "+channelID, err1)
 	}
 
-	var params = discordgo.WebhookParams{Content: content, Username: nickname, AvatarURL: avatarURL, TTS: false, Files: nil, Components: nil, Embeds: nil, AllowedMentions: nil}
-	log.INFO.Println(webhook.ID, webhook.Name, webhook.Token, webhook.GuildID, webhook.ChannelID, &params)
+	var files = discord.GetFilesFromAttachments(attachments)
+	if len(files) > 0 {
+		log.INFO.Println("Got Files!")
+	} else {
+		files = nil
+	}
+	var params = discordgo.WebhookParams{Content: content, Username: nickname, AvatarURL: avatarURL, TTS: false, Files: files, Components: nil, Embeds: nil, AllowedMentions: nil}
 	if webhook.Token == "" {
 		log.WARN.Println("Could not find Webhook Token!")
 		log.WARN.Println(webhook)
