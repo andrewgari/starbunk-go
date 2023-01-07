@@ -51,20 +51,20 @@ func (b BluBot) HandleMessage(session *discordgo.Session, message discordgo.Mess
 	if b.isRequestToSayBlu(message.Content) {
 		name := b.getNameFromBluRequest(message.Content, message.Author.Username)
 		if strings.ToLower(name) == "venn" {
-			webhook.WriteMessage(session, channelID, contemptResponse, b.Name, b.AvatarURL(), nil)
+			webhook.WriteMessage(session, session.Identify.Token, channelID, contemptResponse, b.Name, b.AvatarURL(), nil)
 		} else {
-			webhook.WriteMessage(session, channelID, fmt.Sprintf(friendlyResponse, name), b.Name, b.AvatarURL(), nil)
+			webhook.WriteMessage(session, session.Identify.Token, channelID, fmt.Sprintf(friendlyResponse, name), b.Name, b.AvatarURL(), nil)
 		}
 	} else if b.isVennInsultingBlu(message.Content, message.Author.ID) {
 		bluTimestamp = time.Now()
 		bluMurderTimestamp = time.Now()
-		webhook.WriteMessage(session, channelID, murderResponse, b.Name, murderAvatar, nil)
+		webhook.WriteMessage(session, session.Identify.Token, channelID, murderResponse, b.Name, murderAvatar, nil)
 	} else if b.isResponseToBlu(message, session.State.SessionID) {
 		bluTimestamp = time.Unix(0, 0)
-		webhook.WriteMessage(session, channelID, cheekyResponse, b.Name, cheekyAvatar, nil)
+		webhook.WriteMessage(session, session.Identify.Token, channelID, cheekyResponse, b.Name, cheekyAvatar, nil)
 	} else if b.didSomebodySayBlu(message.Content) {
 		bluTimestamp = time.Now()
-		webhook.WriteMessage(session, channelID, defaultResponse, b.Name, b.AvatarURL(), nil)
+		webhook.WriteMessage(session, session.Identify.Token, channelID, defaultResponse, b.Name, b.AvatarURL(), nil)
 	}
 }
 

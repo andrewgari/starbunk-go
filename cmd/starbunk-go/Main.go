@@ -46,12 +46,12 @@ func main() {
 	RegisterVoiceBots()
 
 	err = starbunkClient.Open()
-	err2 = snowbunkClient.Open()
 	if err != nil {
 		fmt.Println("Error Opening Connection, ", err)
 		return
 	}
-	if err2 != nil {
+	err = snowbunkClient.Open()
+	if err != nil {
 		fmt.Println("Error Opening Snowbunk Connection, ", err)
 		return
 	}
@@ -61,8 +61,14 @@ func main() {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
 
-	starbunkClient.Close()
-	snowbunkClient.Close()
+	err = starbunkClient.Close()
+	if err != nil {
+		return
+	}
+	err = snowbunkClient.Close()
+	if err != nil {
+		return
+	}
 }
 
 func onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {

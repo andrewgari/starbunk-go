@@ -17,7 +17,7 @@ func GetWebhook(session *discordgo.Session, channelID, token string) (*discordgo
 
 	var webhooks, err2 = session.ChannelWebhooks(channelID)
 	if err2 != nil {
-		log.ERROR.Println("Error getting Webhook for channel "+channelName, err2)
+		log.ERROR.Println("Error getting Webhooks for channel "+channelName, err2)
 		return nil, err2
 	}
 	for _, webhook := range webhooks {
@@ -37,8 +37,8 @@ func GetWebhook(session *discordgo.Session, channelID, token string) (*discordgo
 
 }
 
-func WriteMessage(session *discordgo.Session, channelID, content, nickname, avatarURL string, attachments []*discordgo.MessageAttachment) {
-	var webhook, err1 = GetWebhook(session, channelID, session.Token)
+func WriteMessage(session *discordgo.Session, token string, channelID, content, nickname, avatarURL string, attachments []*discordgo.MessageAttachment) {
+	var webhook, err1 = GetWebhook(session, channelID, token)
 	if err1 != nil {
 		log.ERROR.Println("Error Creating Webhook for channel "+channelID, err1)
 	}
@@ -50,7 +50,7 @@ func WriteMessage(session *discordgo.Session, channelID, content, nickname, avat
 		files = nil
 	}
 	var params = discordgo.WebhookParams{Content: content, Username: nickname, AvatarURL: avatarURL, TTS: false, Files: files, Components: nil, Embeds: nil, AllowedMentions: nil}
-	if webhook.Token == "" {
+	if token == "" {
 		log.WARN.Println("Could not find Webhook Token!")
 		log.WARN.Println(webhook)
 	}

@@ -38,6 +38,6 @@ func (b PickleBot) HandleMessage(session *discordgo.Session, message discordgo.M
 		if len(name) > 0 {
 			name = message.Author.Username
 		}
-		webhook.WriteMessage(session, message.ChannelID, fmt.Sprintf(b.Response(), message.Member.Nick), b.ObserverName(), b.AvatarURL(), nil)
+		webhook.WriteMessage(session, session.Identify.Token, message.ChannelID, fmt.Sprintf(b.Response(), message.Member.Nick), b.ObserverName(), b.AvatarURL(), nil)
 	}
 }

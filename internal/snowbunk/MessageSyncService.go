@@ -71,5 +71,5 @@ func (snowservice SnowbunkService) WriteMessage(session *discordgo.Session, mess
 			info = discord.DiscordMemberInfo{UserID: message.Author.ID, DisplayName: message.Author.Username, AvatarURL: message.Author.AvatarURL("")}
 		}
 	}
-	webhook.WriteMessage(session, linkedChannel.ID, message.Content, info.DisplayName, info.AvatarURL, message.Attachments)
+	webhook.WriteMessage(session, session.Identify.Token, linkedChannel.ID, message.Content, info.DisplayName, info.AvatarURL, message.Attachments)
 }

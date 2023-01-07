@@ -30,6 +30,6 @@ func (b SoggyBot) Response() string {
 
 func (b SoggyBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	if utils.Match(b.Pattern(), message.Content) && utils.Contains(message.Member.Roles, b.Role) {
-		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.Name, b.AvatarURL(), nil)
+		webhook.WriteMessage(session, session.Identify.Token, message.ChannelID, b.Response(), b.Name, b.AvatarURL(), nil)
 	}
 }

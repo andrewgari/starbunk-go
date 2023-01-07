@@ -9,29 +9,29 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type VennBot struct {
+type GuyBot struct {
 	UserID    string
 	GuildID   string
 	Responses []string
 }
 
-func (b VennBot) ObserverName() string {
+func (b GuyBot) ObserverName() string {
 	return ""
 }
 
-func (b VennBot) AvatarURL() string {
+func (b GuyBot) AvatarURL() string {
 	return ""
 }
 
-func (b VennBot) Response() string {
+func (b GuyBot) Response() string {
 	rand.Seed(time.Now().UnixNano())
 	var roll = rand.Intn(len(b.Responses))
 	response := b.Responses[roll]
 	return response
 }
 
-func (b VennBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
-	if message.Author.ID == b.UserID && utils.PercentChance(20) {
+func (b GuyBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
+	if message.Author.ID == b.UserID && utils.PercentChance(5) {
 		var username = message.Author.Username
 		var avatarURL = message.Author.AvatarURL("")
 		var member, error = session.GuildMember(b.GuildID, message.Author.ID)

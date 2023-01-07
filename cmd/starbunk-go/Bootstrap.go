@@ -39,7 +39,25 @@ func RegisterReplyBots() {
 		"Like I always say, that was pretty cringe...",
 		"C.R.I.N.G.E",
 	)
+	guyResponses := make([]string, 0)
+	guyResponses = append(guyResponses,
+		"What!? What did you say?",
+		"Geeeeeet ready for Shriek Week!",
+		"Try and keep up mate....",
+		"But Who really died that day.\n...and who came back?",
+		"Sheeeeeeeeeeeesh",
+		"Rats! Rats! Weeeeeeee're the Rats!",
+		"The One Piece is REEEEEEEEEEEEEEEEEEAL",
+		"Psh, I dunno about that, Chief...",
+		"Come to me my noble EINHERJAHR",
+		"If you can't beat em, EAT em!",
+		"Have you ever been so sick you sluiced your pants?",
+		"Bird Up!",
+		"Schlorp",
+		"Blimbo",
+	)
 	observer.MessageService.AddObserver(reply.VennBot{GuildID: config.GuildIDs["Starbunk"], UserID: config.UserIDs["Venn"], Responses: vennResponses})
+	observer.MessageService.AddObserver(reply.GuyBot{GuildID: config.GuildIDs["Starbunk"], UserID: config.UserIDs["Guy"], Responses: guyResponses})
 }
 
 func RegisterCommandBots() {

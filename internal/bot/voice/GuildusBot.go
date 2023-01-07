@@ -20,7 +20,7 @@ func (b GuildusBot) ObserverName() string {
 
 func (b GuildusBot) HandleVoiceStateChange(session *discordgo.Session, event discordgo.VoiceStateUpdate) {
 	if event.UserID == b.GuildusID && event.ChannelID == b.WhaleWatchersID {
-		webhook.WriteMessage(session, b.WhaleWatchersID, ":wave:", "GuildusBot", avatarUrl, nil)
+		webhook.WriteMessage(session, session.Identify.Token, b.WhaleWatchersID, ":wave:", "GuildusBot", avatarUrl, nil)
 		_, err := session.ChannelMessageSend(b.WhaleWatchersID, ":wave:")
 		if err != nil {
 			log.ERROR.Println("Error Waving at Guildus.")

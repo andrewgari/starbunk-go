@@ -29,7 +29,7 @@ var lastResponse = time.Unix(0, 0)
 func (b DeafBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	if message.Author.ID == b.ID && time.Now().After(lastResponse.AddDate(0, 0, 10)) {
 		if !lastResponse.IsZero() {
-			webhook.WriteMessage(session, message.ChannelID, b.Response(), b.Name, b.AvatarURL(), nil)
+			webhook.WriteMessage(session, session.Identify.Token, message.ChannelID, b.Response(), b.Name, b.AvatarURL(), nil)
 		}
 		lastResponse = time.Now()
 	}

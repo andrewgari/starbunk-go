@@ -1,3 +1,6 @@
-FROM justsomebots/musicbot:master
-COPY options.ini .
-COPY options.ini config/.
+# FROM justsomebots/musicbot:master
+# COPY options.ini .
+# COPY options.ini config/.
+
+FROM craumix/jmusicbot
+COPY config/config.txt /jmb/config/.

@@ -29,6 +29,6 @@ func (b ChaosBot) Pattern() string {
 
 func (b ChaosBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	if utils.Match(b.Pattern(), message.Content) {
-		webhook.WriteMessage(session, message.ChannelID, b.Response(), b.Name, b.AvatarURL(), nil)
+		webhook.WriteMessage(session, session.Identify.Token, message.ChannelID, b.Response(), b.Name, b.AvatarURL(), nil)
 	}
 }

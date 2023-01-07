@@ -2,7 +2,7 @@ version: '2'
 
 services:
   bunkbot:
-    image: starbunk/bunkbot
+    image: localhost:5000/starbunk/bunkbot
     container_name: bunk-bot
     restart: unless-stopped
     build: 
@@ -11,16 +11,9 @@ services:
     env_file:
       - docker.env
   musicbot:
-    image: craumix/jmusicbot
+    image: localhost:5000/starbunk/musicbot
     container_name: dj-cova
     restart: unless-stopped
-    volumes:
-     - ~/docker/starbunk/config:/jmb/config/
-  # connecty:
-  #   image: starbunk/connecty
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.connecty
-  #   restart: unless-stopped
-  #   volumes:
-  #     - ~./docker/starbunk/config/connecty/config.ini:/etc/starbunk/connecty/config.ini
+    build: 
+      context: .
+      dockerfile: Dockerfile.Music
