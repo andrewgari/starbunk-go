@@ -52,6 +52,10 @@ func RegisterReplyBots() {
 		"Come to me my noble EINHERJAHR",
 		"If you can't beat em, EAT em!",
 		"Have you ever been so sick you sluiced your pants?",
+		"Welcome back to ... Melon be Smellin'",
+		"Chaotic Evil: Don't Respond. :unamused:",
+		":NODDERS: Big Boys... :NODDERS:",
+		"Fun Fact: That was actually in XI as well.",
 		"Bird Up!",
 		"Schlorp",
 		"Blimbo",
@@ -62,6 +66,10 @@ func RegisterReplyBots() {
 
 func RegisterCommandBots() {
 	observer.CommandBots["clearWebhooks"] = command.ClearWebhooks{Command: "clearWebhooks", GuildID: config.GuildIDs["Starbunk"]}
+	observer.CommandBots["play"] =
+		command.MusicCorrect{
+			Command: "music_correct",
+		}
 	observer.CommandBots["nebula"] =
 		command.NebulaBot{
 			Command:        "nebula",
