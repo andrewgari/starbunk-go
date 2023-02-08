@@ -46,6 +46,9 @@ type SnowbunkService struct {
 }
 
 func (snowservice SnowbunkService) SyncMessage(session *discordgo.Session, message discordgo.Message) {
+	if message.Author.ID == "163780525859930112" { // exclude all of Goose's posts.
+		return
+	}
 	var originChannel, err = session.Channel(message.ChannelID)
 	if err != nil {
 		log.ERROR.Println("Can't find Channen Origin", err)

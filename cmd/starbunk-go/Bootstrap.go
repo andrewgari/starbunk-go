@@ -68,7 +68,7 @@ func RegisterCommandBots() {
 	observer.CommandBots["clearWebhooks"] = command.ClearWebhooks{Command: "clearWebhooks", GuildID: config.GuildIDs["Starbunk"]}
 	observer.CommandBots["play"] =
 		command.MusicCorrect{
-			Command: "music_correct",
+			Command: "play",
 		}
 	observer.CommandBots["nebula"] =
 		command.NebulaBot{

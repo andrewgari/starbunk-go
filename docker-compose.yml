@@ -1,6 +1,17 @@
 version: '2'
 
 services:
+  registry:
+    image: registry:latest
+    ports:
+      - "5000:5000"
+  registry-frontend:
+    image: konradkleine/docker-registry-frontend:v2
+    ports:
+      - "8080:80"
+    environment:
+      - ENV_DOCKER_REGISTRY_HOST="localhost"
+
   bunkbot:
     image: localhost:5000/starbunk/bunkbot
     container_name: bunk-bot
