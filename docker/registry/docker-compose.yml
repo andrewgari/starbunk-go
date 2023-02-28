@@ -1,0 +1,16 @@
+version: '2'
+
+services:
+  registry:
+    container_name: "image-repo-backend"
+    image: registry:latest
+    ports:
+      - "5000:5000"
+  registry-frontend:
+    container_name: "image-repo-frontend"
+    image: konradkleine/docker-registry-frontend:v2
+    ports:
+      - "8080:80"
+    environment:
+      - ENV_DOCKER_REGISTRY_HOST=localhost
+      - ENV_DOCKER_REGISTRY_PORT=5000

@@ -18,11 +18,10 @@ func RegisterReplyBots() {
 	observer.MessageService.AddObserver(reply.GundamBot{Name: "That Famous Unicorn Robot, \"Gandum\""})
 	observer.MessageService.AddObserver(reply.HoldBot{Name: "HoldBot"})
 	observer.MessageService.AddObserver(reply.MacaroniBot{Name: "MacaroniBot", ID: config.UserIDs["Venn"], Role: config.RoleIDs["Macaroni"]})
-	observer.MessageService.AddObserver(reply.PickleBot{Name: "GremlinBot", ID: config.UserIDs["Sig"]})
 	observer.MessageService.AddObserver(reply.SheeshBot{Name: "SheeshBot"})
-	observer.MessageService.AddObserver(reply.SixtyNineBot{Name: "CovaBot"})
 	observer.MessageService.AddObserver(reply.SoggyBot{Name: "SoggyBot", Role: config.RoleIDs["WetBread"]})
 	observer.MessageService.AddObserver(reply.SpiderBot{Name: "Spider-Bot"})
+	quoteResponses := make(map[string][]string)
 	vennResponses := make([]string, 0)
 	vennResponses = append(vennResponses,
 		"Sorry, but that was über cringe...",
@@ -39,7 +38,22 @@ func RegisterReplyBots() {
 		"Like I always say, that was pretty cringe...",
 		"C.R.I.N.G.E",
 	)
-	guyResponses := make([]string, 0)
+	bananaSponses := make([]string, 0)
+	bananaSponses = append(bananaSponses,
+		"Always bring a :banana: to a party, banana's are good!",
+		"Don't drop the :banana:, they're a good source of potassium!",
+		"If you gave a monkey control over it's environment, it would fill the world with :banana:s...",
+		"Banana. :banana:",
+		"Don't judge a :banana: by it's skin.",
+		"Life is full of :banana: skins.",
+		"OOOOOOOOOOOOOOOOOOOOOH BA NA NA :banana:",
+		":banana: Slamma!",
+		"A :banana: per day keeps the Macaroni away...",
+		"const bestFruit = ('b' + 'a' + + 'a').toLowerCase(); :banana:",
+		"Did you know that the :banana:s we have today aren't even the same species of :banana:s we had 50 years ago. The fruit has gone extinct over time and it's actually a giant eugenics experimet to produce new species of :banana:...",
+		"Monkeys always ask 'Wher :banana:', but none of them ask 'How :banana:?'",
+	)
+	guyResponses := make([]string, 0)+
 	guyResponses = append(guyResponses,
 		"What!? What did you say?",
 		"Geeeeeet ready for Shriek Week!",
@@ -60,16 +74,19 @@ func RegisterReplyBots() {
 		"Schlorp",
 		"Blimbo",
 	)
-	observer.MessageService.AddObserver(reply.VennBot{GuildID: config.GuildIDs["Starbunk"], UserID: config.UserIDs["Venn"], Responses: vennResponses})
+	log.INFO.Printf("Adding")
+	quoteResponses[config.UserIDs["Guy"]] = guyResponses
+	quoteResponses[config.UserIDs["Venn"]] = vennResponses
+	// observer.MessageService.AddObserver(reply.QuoteBot{GuildID: config.GuildIDs["Starbunk"], Responses: quoteResponses})
+	observer.MessageService.AddObserver(reply.PickleBot{Name: "GremlinBot", ID: config.UserIDs["Sig"]})
+	observer.MessageService.AddObserver(reply.VennBot{GuildID: config.GuildIDs["Starbunk"], UserID: config.UserIDs["Venn"], Responses: vennResponses, Bananasponses: bananaSponses})
 	observer.MessageService.AddObserver(reply.GuyBot{GuildID: config.GuildIDs["Starbunk"], UserID: config.UserIDs["Guy"], Responses: guyResponses})
+	observer.MessageService.AddObserver(reply.SixtyNineBot{Name: "CovaBot"})
+	observer.MessageService.AddObserver(command.MusicCorrect{})
 }
 
 func RegisterCommandBots() {
 	observer.CommandBots["clearWebhooks"] = command.ClearWebhooks{Command: "clearWebhooks", GuildID: config.GuildIDs["Starbunk"]}
-	observer.CommandBots["play"] =
-		command.MusicCorrect{
-			Command: "play",
-		}
 	observer.CommandBots["nebula"] =
 		command.NebulaBot{
 			Command:        "nebula",
@@ -83,6 +100,8 @@ func RegisterCommandBots() {
 			NebulaAnnouncements: config.ChannelIDs["NebulaAnnouncements"],
 			NebulaBunker:        config.ChannelIDs["NebulaBunker"],
 		}
+	observer.CommandBots["raidwhen"] =
+		command.HowLongTilRaid{Command: "raidwhen"}
 }
 
 func RegisterVoiceBots() {

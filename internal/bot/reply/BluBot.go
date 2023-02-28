@@ -18,10 +18,10 @@ type BluBot struct {
 }
 
 const (
-	defaultPattern string = "\\b(blue?|bloo|b lue?|eulb|azul|azul|cerulean|azure)(bot)?\\b"
-	confirmPattern string = "\\b(blue?(bot)?)|(bot)|yes|no|yep|yeah|(i did)|(you got it)|(sure did)\\b"
+	defaultPattern string = "\b(blue?|bloo|b lue?|eulb|azul|azul|cerulean|azure)(bot)?\b"
+	confirmPattern string = "\b(blue?(bot)?)|(bot)|yes|no|yep|yeah|(i did)|(you got it)|(sure did)\b"
 	nicePattern    string = "blue?bot,? say something nice about (?P<name>.+$)"
-	meanPattern    string = "\\b(fuck(ing)?|hate|die|kill|worst|mom|shit|murder|bots?)\\b"
+	meanPattern    string = "\b(fuck(ing)?|hate|die|kill|worst|mom|shit|murder|bots?)\b"
 
 	murderAvatar string = "https://imgur.com/Tpo8Ywd.jpg"
 	cheekyAvatar string = "https://i.imgur.com/dO4a59n.png"

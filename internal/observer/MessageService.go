@@ -16,6 +16,10 @@ type MessagePublisher struct {
 	Observers map[string]IMessageObserver
 }
 
+func (p MessagePublisher) CommandCharacter() string {
+	return "!"
+}
+
 // addObserver implements bot.IMessagePublisher
 func (p MessagePublisher) AddObserver(observer IMessageObserver) {
 	p.Observers[observer.ObserverName()] = observer
@@ -23,12 +27,12 @@ func (p MessagePublisher) AddObserver(observer IMessageObserver) {
 
 // broadcast implements bot.IMessagePublisher
 func (p MessagePublisher) Broadcast(session *discordgo.Session, message discordgo.Message) {
-	if len(message.Content) > 0 && message.Content[0:1] == "!" {
+	if len(message.Content) > 0 && message.Content[0:1] == p.CommandCharacter() {
 		whitespaces := regexp.MustCompile(`\s+`)
 		message.Content = whitespaces.ReplaceAllString(message.Content, " ")
 		log.INFO.Println("Got Command, ", message.Content)
 		command := strings.Split(message.Content, " ")[0]
-		command = strings.TrimPrefix(command, "!")
+		command = strings.TrimPrefix(command, p.CommandCharacter())
 		log.INFO.Println(command)
 		var bot = CommandBots[command]
 		if bot != nil && bot.IsValidCommand(message.Content) {

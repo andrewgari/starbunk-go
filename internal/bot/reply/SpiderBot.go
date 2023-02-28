@@ -16,7 +16,7 @@ func (b SpiderBot) ObserverName() string {
 }
 
 func (b SpiderBot) AvatarURL() string {
-	return "https://i.dlpng.com/static/png/6569125_preview.png"
+	return "https://i.pinimg.com/736x/33/e0/06/33e00653eb485455ce5121b413b26d3b.jpg"
 }
 
 func (b SpiderBot) Pattern() string {

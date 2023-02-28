@@ -1,19 +1,8 @@
 version: '2'
 
 services:
-  registry:
-    image: registry:latest
-    ports:
-      - "5000:5000"
-  registry-frontend:
-    image: konradkleine/docker-registry-frontend:v2
-    ports:
-      - "8080:80"
-    environment:
-      - ENV_DOCKER_REGISTRY_HOST="localhost"
-
   bunkbot:
-    image: localhost:5000/starbunk/bunkbot
+    image: starbunk/bunkbot:latest
     container_name: bunk-bot
     restart: unless-stopped
     build: 
@@ -22,7 +11,7 @@ services:
     env_file:
       - docker.env
   musicbot:
-    image: localhost:5000/starbunk/musicbot
+    image: starbunk/musicbot:latest
     container_name: dj-cova
     restart: unless-stopped
     build: 
