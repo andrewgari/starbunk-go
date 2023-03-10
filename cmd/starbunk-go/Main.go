@@ -48,11 +48,13 @@ func main() {
 	err = starbunkClient.Open()
 	if err != nil {
 		fmt.Println("Error Opening Connection, ", err)
+		log.ERROR.Println("Starbunk Token: ", starbunkClient.Token)
 		return
 	}
 	err = snowbunkClient.Open()
 	if err != nil {
 		fmt.Println("Error Opening Snowbunk Connection, ", err)
+		log.ERROR.Println("Starbunk Token: ", starbunkClient.Token)
 		return
 	}
 
