@@ -2,7 +2,7 @@ version: '2'
 
 services:
   bunkbot:
-    image: starbunk/bunkbot:latest
+    image: covadax/bunkbot:latest
     container_name: bunk-bot
     restart: unless-stopped
     build: 
@@ -11,9 +11,8 @@ services:
     env_file:
       - docker.env
   musicbot:
-    image: starbunk/musicbot:latest
+    image: craumix/jmusicbot:latest
     container_name: dj-cova
     restart: unless-stopped
-    build: 
-      context: .
-      dockerfile: Dockerfile.Music
+    volumes:
+      - ./config.txt:/jmb/config/config.txt
