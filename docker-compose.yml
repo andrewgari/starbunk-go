@@ -3,15 +3,15 @@ version: '2'
 services:
   bunkbot:
     container_name: bunk-bot
-    restart: unless-stopped
     build: https://github.com/andrewgari/starbunk-go.git
     image: covadax/bunkbot:latest
+    restart: unless-stopped
     env_file:
       - docker.env
   musicbot:
-    image: covadax/djcova:latest
     container_name: dj-cova
-    restart: unless-stopped
     build: https://github.com/eritislami/evobot.git
+    image: covadax/djcova:latest
+    restart: unless-stopped
     env_file:
       - docker.env
