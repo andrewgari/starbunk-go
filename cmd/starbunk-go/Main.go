@@ -24,8 +24,8 @@ func main() {
 	snowbunkConfig = BotConfig{Token: os.Getenv("SNOWBUNK_TOKEN")}
 	log.SetupLogger()
 
-	starbunkClient, err := discordgo.New("Bot " + starbunkConfig.Token)
-	snowbunkClient, err2 := discordgo.New("Bot " + snowbunkConfig.Token)
+	starbunkClient, err := discordgo.New(starbunkConfig.Token)
+	snowbunkClient, err2 := discordgo.New(snowbunkConfig.Token)
 
 	if err != nil || err2 != nil {
 		fmt.Println("Error Creating Discord Session", err)
