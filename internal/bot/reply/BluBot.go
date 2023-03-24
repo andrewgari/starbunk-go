@@ -18,10 +18,10 @@ type BluBot struct {
 }
 
 const (
-	defaultPattern string = "\b(blue?|bloo|b lue?|eulb|azul|cerulean|azure|vivena|not red)(bot)?\b"
-	confirmPattern string = "\b(blue?(bot)?)|(bot)|yes|no|yep|yeah|(i did)|(you got it)|(sure did)\b"
-	nicePattern    string = "blue?bot,? say something nice about (?P<name>.+$)"
-	meanPattern    string = "\b(fuck(ing)?|hate|die|kill|worst|mom|shit|murder|bots?)\b"
+	defaultPattern string = `\b(blue?|bloo|b lue?|eulb|azul|cerulean|azure|vivena|not red)(bot)?\b`
+	confirmPattern string = `\b(blue?(bot)?)|(bot)|yes|no|yep|yeah|(i did)|(you got it)|(sure did)\b`
+	nicePattern    string = `blue?bot,? say something nice about (?P<name>.+$)`
+	meanPattern    string = `\b(fuck(ing)?|hate|die|kill|worst|mom|shit|murder|bots?)\b`
 
 	murderAvatar string = "https://imgur.com/Tpo8Ywd.jpg"
 	cheekyAvatar string = "https://i.imgur.com/dO4a59n.png"
@@ -49,20 +49,26 @@ func (b BluBot) AvatarURL() string {
 func (b BluBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	channelID := message.ChannelID
 	if b.isRequestToSayBlu(message.Content) {
+		log.INFO.Println("BlueRequest: " + message.Content)
 		name := b.getNameFromBluRequest(message.Content, message.Author.Username)
 		if strings.ToLower(name) == "venn" {
+			log.INFO.Println("BlueBot: I'm not calling Venn Blue")
 			webhook.WriteMessage(session, session.Identify.Token, channelID, contemptResponse, b.Name, b.AvatarURL(), nil)
 		} else {
+			log.INFO.Printf("Calling %s Blue.", message.Author.Username)
 			webhook.WriteMessage(session, session.Identify.Token, channelID, fmt.Sprintf(friendlyResponse, name), b.Name, b.AvatarURL(), nil)
 		}
 	} else if b.isVennInsultingBlu(message.Content, message.Author.ID) {
+		log.INFO.Println("BlueBot: Venn is insulting me.")
 		bluTimestamp = time.Now()
 		bluMurderTimestamp = time.Now()
 		webhook.WriteMessage(session, session.Identify.Token, channelID, murderResponse, b.Name, murderAvatar, nil)
 	} else if b.isResponseToBlu(message, session.State.SessionID) {
+		log.INFO.Println("BlueBot: Somebody said blue!")
 		bluTimestamp = time.Unix(0, 0)
 		webhook.WriteMessage(session, session.Identify.Token, channelID, cheekyResponse, b.Name, cheekyAvatar, nil)
 	} else if b.didSomebodySayBlu(message.Content) {
+		log.INFO.Println("BlueBot: Did Somebody say Blu?")
 		bluTimestamp = time.Now()
 		webhook.WriteMessage(session, session.Identify.Token, channelID, defaultResponse, b.Name, b.AvatarURL(), nil)
 	}

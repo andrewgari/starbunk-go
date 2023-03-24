@@ -20,9 +20,28 @@ func (c HowLongTilRaid) IsValidCommand(message string) bool {
 	return isValidCommand(c.Command, message)
 }
 
+func (c HowLongTilRaid) WednesdayRaidTime() {
+
+}
+
+func (c HowLongTilRaid) SaturdayRaidTime() {
+	now := time.Now()
+	now.Month()
+
+}
+
 func (c HowLongTilRaid) ProcessMessage(session *discordgo.Session, message discordgo.Message) {
 	if c.IsValidCommand(message.Content) {
-		now := time.Now().UTC()
+
+		pstLoc, timeError := time.LoadLocation("America/Los_Angeles")
+		if timeError != nil {
+			fmt.Println(timeError)
+			return
+		}
+		utc := time.Now().UTC()
+		now := utc.In(pstLoc)
+		fmt.Println(now, now.Location(), ": DST", isTimeDST(now))
+
 		raidTime := getNextRaid(now)
 		log.INFO.Println(raidTime)
 		diff := raidTime.Sub(now)
@@ -47,6 +66,9 @@ func (c HowLongTilRaid) ProcessMessage(session *discordgo.Session, message disco
 			seconds -= 60
 		}
 		log.INFO.Println(minutes)
+		if now.IsDST() {
+			hours -= 1
+		}
 		_, err := session.ChannelMessageSend(
 			message.ChannelID,
 			fmt.Sprintf("Raid is in %d days, %d hours and %d minutes", days, hours, minutes),
@@ -68,4 +90,23 @@ func getNextRaid(now time.Time) time.Time {
 	default:
 		return getNextRaid(now.AddDate(0, 0, 1))
 	}
+}
+
+func isTimeDST(t time.Time) bool {
+	// If the most recent (within the last year) clock change
+	// was forward then assume the change was from std to dst.
+	hh, mm, _ := t.UTC().Clock()
+	tClock := hh*60 + mm
+	for m := -1; m > -12; m-- {
+		// assume dst lasts for least one month
+		hh, mm, _ := t.AddDate(0, m, 0).UTC().Clock()
+		clock := hh*60 + mm
+		if clock != tClock {
+			log.INFO.Println("It is DST")
+			return clock > tClock
+		}
+	}
+	log.INFO.Println("It is not DST")
+	// assume no dst
+	return false
 }

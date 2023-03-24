@@ -2,5 +2,5 @@
 # COPY options.ini .
 # COPY options.ini config/.
 
-FROM craumix/jmusicbot:latest
-COPY config/config.txt /jmb/config/.
+FROM eritislami/evobot:latest
+# COPY config/config.txt /jmb/config/.

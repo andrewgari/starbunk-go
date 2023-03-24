@@ -51,7 +51,7 @@ func (snowservice SnowbunkService) SyncMessage(session *discordgo.Session, messa
 	}
 	var originChannel, err = session.Channel(message.ChannelID)
 	if err != nil {
-		log.ERROR.Println("Can't find Channen Origin", err)
+		log.ERROR.Println("Can't find Channel Origin: "+message.ChannelID, err)
 		return
 	}
 

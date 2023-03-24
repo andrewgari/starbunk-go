@@ -2,16 +2,22 @@ version: '2'
 
 services:
   bunkbot:
+    # image: covadax/bunkbot:latest
     container_name: bunk-bot
-    build: https://github.com/andrewgari/starbunk-go.git
-    image: covadax/bunkbot:latest
     restart: unless-stopped
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    network_mode: "host"
     env_file:
       - docker.env
   musicbot:
+    # image: covadax/djcova:latest
     container_name: dj-cova
-    build: https://github.com/eritislami/evobot.git
-    image: covadax/djcova:latest
     restart: unless-stopped
+    build: 
+      context: .
+      dockerfile: Dockerfile.Music
+    network_mode: "host"
     env_file:
       - docker.env
