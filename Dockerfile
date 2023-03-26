@@ -1,6 +1,5 @@
 FROM golang:latest
 
-RUN apt update
 WORKDIR /etc/github.com/andrewgari/starbunk-go
 COPY go.mod .
 COPY go.sum .
