@@ -2,7 +2,7 @@ version: '2'
 
 services:
   bunkbot:
-    # image: covadax/bunkbot:latest
+    image: covadax/bunkbot:latest
     container_name: bunk-bot
     restart: unless-stopped
     build: 
