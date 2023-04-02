@@ -80,8 +80,14 @@ func RegisterReplyBots() {
 	observer.MessageService.AddObserver(reply.PickleBot{Name: "GremlinBot", ID: config.UserIDs["Sig"]})
 	observer.MessageService.AddObserver(reply.VennBot{GuildID: config.GuildIDs["Starbunk"], UserID: config.UserIDs["Venn"], Responses: vennResponses, Bananasponses: bananaSponses})
 	observer.MessageService.AddObserver(reply.GuyBot{GuildID: config.GuildIDs["Starbunk"], UserID: config.UserIDs["Guy"], Responses: guyResponses})
-	observer.MessageService.AddObserver(reply.SixtyNineBot{Name: "CovaBot"})
 	observer.MessageService.AddObserver(command.MusicCorrect{})
+	observer.MessageService.AddObserver(
+		reply.RagtimeBot{
+			TriviaMaster:        config.RoleIDs["TriviaMaster"],
+			TriviaChannel:       config.ChannelIDs["Trivia"],
+			TriviaReviewChannel: config.ChannelIDs["TriviaReview"],
+		})
+	observer.MessageService.AddObserver(reply.SixtyNineBot{Name: "CovaBot"})
 }
 
 func RegisterCommandBots() {
