@@ -1,7 +1,7 @@
 package reply
 
 import (
-	"starbunk-bot/internal/log"
+	"fmt"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -18,39 +18,32 @@ func (b RagtimeBot) ObserverName() string {
 }
 
 func (b RagtimeBot) AvatarURL() string {
-	return "http://ragtime.jpeg"
+	return ""
 }
 
 func (b RagtimeBot) Response() string {
-	return "I am bot"
+	return ""
 }
 
 func (b RagtimeBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
-	channel, err := session.Channel(b.TriviaReviewChannel)
-	if err != nil {
-		log.ERROR.Println("Couldn't find channel: " + b.TriviaReviewChannel)
-		log.WARN.Println("Looking For Channel: " + b.TriviaReviewChannel)
-	}
-	log.INFO.Println("Message received from Channel: " + channel.Name)
 	if message.ChannelID == b.TriviaChannel {
-		log.INFO.Println("I'm doin it")
-		memberNick := message.Member.Nick
-		if memberNick == "" {
-			memberNick = message.Author.Username
-		}
+		memberNick := getNickname(message)
+		responses := make(map[string]string)
 		if contains(message.Member.Roles, b.TriviaMaster) {
-			log.INFO.Println("Trivia Master")
-			session.ChannelMessageSend(b.TriviaReviewChannel, "__**"+message.Content+"**__")
+			session.ChannelMessageSend(b.TriviaReviewChannel, fmt.Sprintf("__**%s**__", message.Content))
 			session.ChannelMessageSend(b.TriviaChannel, "You have 20 seconds to answer.")
 			time.Sleep(10 * time.Second)
 			session.ChannelMessageSend(b.TriviaChannel, "You have 10 seconds left!")
 			time.Sleep(10 * time.Second)
 			session.ChannelMessageSend(b.TriviaChannel, "*Time's up!*")
 			session.ChannelMessageSend(b.TriviaReviewChannel, "*Time's up!*")
+			for key, value := range responses {
+				session.ChannelMessageSend(b.TriviaChannel, fmt.Sprintf("**%s**: *%s*", key, value))
+			}
 		} else {
-			log.INFO.Println("Not the Trivia Master")
+			responses[memberNick] = message.Content
 			session.ChannelMessageDelete(message.ChannelID, message.ID)
-			session.ChannelMessageSend(b.TriviaReviewChannel, "**"+memberNick+":** "+message.Content)
+			session.ChannelMessageSend(b.TriviaReviewChannel, fmt.Sprintf("**%s:** *%s*", memberNick, message.Content))
 		}
 	}
 }
@@ -62,4 +55,12 @@ func contains(slice []string, check string) bool {
 		}
 	}
 	return false
+}
+
+func getNickname(message discordgo.Message) string {
+	nick := message.Member.Nick
+	if nick == "" {
+		nick = message.Author.Username
+	}
+	return nick
 }
