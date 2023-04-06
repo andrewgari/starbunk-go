@@ -52,6 +52,7 @@ func RegisterReplyBots() {
 		"const bestFruit = ('b' + 'a' + + 'a').toLowerCase(); :banana:",
 		"Did you know that the :banana:s we have today aren't even the same species of :banana:s we had 50 years ago. The fruit has gone extinct over time and it's actually a giant eugenics experimet to produce new species of :banana:...",
 		"Monkeys always ask 'Wher :banana:', but none of them ask 'How :banana:?'",
+		":banana: https://www.tiktok.com/@tracey_dintino_charles/video/7197753358143278378?_r=1&_t=8bFpt5cfIbG",
 	)
 	guyResponses := make([]string, 0)
 	guyResponses = append(guyResponses,
