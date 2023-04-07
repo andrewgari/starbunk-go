@@ -20,7 +20,7 @@ func (b SixtyNineBot) AvatarURL() string {
 }
 
 func (b SixtyNineBot) Pattern() string {
-	return "\\b69|(sixty-?nine)\\b"
+	return `\b69|(sixty-?nine)\b`
 }
 
 func (b SixtyNineBot) Response() string {
