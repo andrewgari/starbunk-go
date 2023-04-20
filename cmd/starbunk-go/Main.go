@@ -39,56 +39,6 @@ func main() {
 	starbunkClient.AddHandler(onMessageCreate)
 	starbunkClient.AddHandler(onUserVoiceStateChange)
 
-	appID := starbunkClient.State.Application.ID
-	guildID := starbunkClient.State.Application.GuildID
-	_, err4 := starbunkClient.ApplicationCommandBulkOverwrite(appID, guildID,
-		[]*discordgo.ApplicationCommand{
-			{
-				Name:        "hello-world",
-				Description: "Showcase of a basic slash command",
-			},
-		})
-	if err4 != nil {
-		log.ERROR.Println("oops")
-	}
-
-	starbunkClient.AddHandler(func(
-		s *discordgo.Session,
-		i *discordgo.InteractionCreate,
-	) {
-		err := s.InteractionRespond(
-			i.Interaction,
-			&discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: "Hello world!",
-				},
-			},
-		)
-		if err != nil {
-			// Handle the error
-		}
-	})
-
-	// starbunkClient.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	// 	data := i.ApplicationCommandData()
-	// 	switch data.Name {
-	// 	case "basic-command":
-	// 		err := s.InteractionRespond(
-	// 			i.Interaction,
-	// 			&discordgo.InteractionResponse{
-	// 				Type: discordgo.InteractionResponseChannelMessageWithSource,
-	// 				Data: &discordgo.InteractionResponseData{
-	// 					Content: "Hello world!",
-	// 				},
-	// 			},
-	// 		)
-	// 		if err != nil {
-	// 			log.ERROR.Println("Oops")
-	// 		}
-	// 	}
-	// })
-
 	snowbunkClient.AddHandler(onSnowbunkMessageCreate)
 
 	RegisterCommandBots()
