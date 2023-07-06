@@ -13,7 +13,7 @@ func RegisterReplyBots() {
 	observer.MessageService.AddObserver(reply.BluBot{Name: "BluBot"})
 	observer.MessageService.AddObserver(reply.ChaosBot{Name: "ChaosBot"})
 	observer.MessageService.AddObserver(reply.CheckBot{Name: "CzechBot"})
-	observer.MessageService.AddObserver(reply.DeafBot{Name: "DeafBot", ID: config.UserIDs["Deaf"]})
+	// observer.MessageService.AddObserver(reply.DeafBot{Name: "DeafBot", ID: config.UserIDs["Deaf"]})
 	observer.MessageService.AddObserver(reply.EzioBot{Name: "Ezio Auditore Da Firenze", ID: config.UserIDs["Bender"]})
 	observer.MessageService.AddObserver(reply.GundamBot{Name: "That Famous Unicorn Robot, \"Gandum\""})
 	observer.MessageService.AddObserver(reply.HoldBot{Name: "HoldBot"})
@@ -93,19 +93,6 @@ func RegisterReplyBots() {
 
 func RegisterCommandBots() {
 	observer.CommandBots["clearWebhooks"] = command.ClearWebhooks{Command: "clearWebhooks", GuildID: config.GuildIDs["Starbunk"]}
-	observer.CommandBots["nebula"] =
-		command.NebulaBot{
-			Command:        "nebula",
-			NebulaLeadRole: config.RoleIDs["NebulaLead"],
-			AllowedRoles:   map[string]string{"Nebula": config.RoleIDs["Nebula"], "NebulaGuest": config.RoleIDs["NebulaGuest"], "NebulaAlum": config.RoleIDs["NebulaAlum"]},
-		}
-	observer.CommandBots["scheduleRaid"] =
-		command.CreateEventBot{
-			Command:             "scheduleRaid",
-			NebulaLeadRole:      config.RoleIDs["NebulaLead"],
-			NebulaAnnouncements: config.ChannelIDs["NebulaAnnouncements"],
-			NebulaBunker:        config.ChannelIDs["NebulaBunker"],
-		}
 	observer.CommandBots["raidwhen"] =
 		command.HowLongTilRaid{Command: "raidwhen"}
 }

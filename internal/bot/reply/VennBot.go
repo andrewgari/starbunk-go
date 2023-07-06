@@ -1,11 +1,10 @@
 package reply
 
 import (
-	"math/rand"
 	"starbunk-bot/internal/log"
 	"starbunk-bot/internal/utils"
 	"starbunk-bot/internal/webhook"
-	"time"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -30,9 +29,7 @@ func (b VennBot) Pattern() string {
 }
 
 func (b VennBot) Response(responses []string) string {
-	rand.Seed(time.Now().UnixNano())
-	var roll = rand.Intn(len(responses))
-	response := responses[roll]
+	response := responses[utils.RandomRoll(len(responses))]
 	return response
 }
 
@@ -43,8 +40,17 @@ func (b VennBot) HandleMessage(session *discordgo.Session, message discordgo.Mes
 		if utils.PercentChance(1) {
 			log.INFO.Println("OOOOOO BA NA NA")
 			response = b.Response(b.Bananasponses)
-		}
-		if len(response) == 0 && utils.PercentChance(20) {
+
+		} else if utils.PercentChance(5) {
+			response = strings.ToUpper(response)
+			mapFunction := func(r rune) rune {
+				if utils.PercentChance(50) {
+					return r + 32
+				}
+				return r
+			}
+			response = strings.Map(mapFunction, response)
+		} else if len(response) == 0 && utils.PercentChance(20) {
 			log.INFO.Println("Venn is cringe")
 			response = b.Response(b.Responses)
 		}

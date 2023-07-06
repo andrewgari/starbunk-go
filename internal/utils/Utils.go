@@ -26,8 +26,20 @@ func Contains(s []string, e string) bool {
 }
 
 func PercentChance(target int) bool {
-	rand.Seed(time.Now().UnixNano())
-	var roll = rand.Intn(100)
+	roll := RandomRoll(100)
 	log.INFO.Printf("Rolled a Percent Chance: %d", roll)
 	return roll < target
+}
+
+func RandomRoll(limit int) int {
+	rand.Seed(time.Now().UnixNano())
+	return rand.Intn(limit)
+}
+
+func Map[T, U any](ts []T, f func(T) U) []U {
+	us := make([]U, len(ts))
+	for i := range ts {
+		us[i] = f(ts[i])
+	}
+	return us
 }
