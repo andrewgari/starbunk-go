@@ -15,6 +15,7 @@ var RoleIDs = map[string]string{
 	"Macaroni":     "836680699217444924",
 	"WetBread":     "204326753215315968",
 	"NebulaLead":   "925957014587322438",
+	"RaidTeam":     "1115646947198521405",
 	"Nebula":       "925955892212535346",
 	"NebulaGuest":  "975189726959120384",
 	"NebulaAlum":   "1010737828780589086",

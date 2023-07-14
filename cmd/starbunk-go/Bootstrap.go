@@ -89,12 +89,13 @@ func RegisterReplyBots() {
 			TriviaReviewChannel: config.ChannelIDs["TriviaReview"],
 		})
 	observer.MessageService.AddObserver(reply.SixtyNineBot{Name: "CovaBot"})
+	observer.MessageService.AddObserver(reply.TheBabyBot{Name: "Samus Aran"})
 }
 
 func RegisterCommandBots() {
 	observer.CommandBots["clearWebhooks"] = command.ClearWebhooks{Command: "clearWebhooks", GuildID: config.GuildIDs["Starbunk"]}
 	observer.CommandBots["raidwhen"] =
-		command.HowLongTilRaid{Command: "raidwhen"}
+	command.HowLongTilRaid{Command: "raidwhen", CovaID: config.UserIDs["Cova"], RaidTeamID: config.RoleIDs["RaidTeam"]}
 }
 
 func RegisterVoiceBots() {

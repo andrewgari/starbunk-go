@@ -9,7 +9,9 @@ import (
 )
 
 type HowLongTilRaid struct {
-	Command string
+	Command    string
+	CovaID     string
+	RaidTeamID string
 }
 
 func (c HowLongTilRaid) CommandWord() string {
@@ -32,30 +34,36 @@ func (c HowLongTilRaid) ProcessMessage(session *discordgo.Session, message disco
 		now := utc.In(pstLoc)
 		raidTime := getNextRaid(now)
 
-		tag := ""
-		if message.Author.ID == "139592376443338752" {
-			tag = fmt.Sprintf("<@&%s>\n", message.Author.ID)
+		roles, roleError := session.GuildRoles(message.GuildID)
+		if roleError == nil {
+			for _, role := range roles {
+				log.INFO.Printf("RoleName: %s : %s", role.Name, role.ID)
+			}
 		}
-		timeMessage := fmt.Sprintf("%sThe Next Raid Time is: <t:%d:f>\nWhich is <t:%d:R>", tag, raidTime.Unix(), raidTime.Unix())
+
+		tag := ""
+		if message.Author.ID == c.CovaID {
+			tag = fmt.Sprintf("<@&%s>", c.RaidTeamID)
+		}
+		timeMessage := fmt.Sprintf("%s\nThe Next Raid Time is: <t:%d:f>\nWhich is <t:%d:R>", tag, raidTime.Unix(), raidTime.Unix())
 		_, err := session.ChannelMessageSend(
 			message.ChannelID,
 			timeMessage,
 		)
 		if err != nil {
 			log.ERROR.Println("Error calculating next raid time.")
+		} else {
+			session.ChannelMessageDelete(message.ChannelID, message.ChannelID)
 		}
 	}
 }
 
 func getNextRaid(now time.Time) time.Time {
-	switch now.Weekday() {
-	case time.Monday:
-	case time.Thursday:
+	if now.Weekday() == time.Monday || now.Weekday() == time.Thursday {
 		raidTime := time.Date(now.Year(), now.Month(), now.Day(), 24, 0, 0, 0, now.UTC().Location())
 		return raidTime
-	default:
-		return getNextRaid(now.AddDate(0, 0, 1))
 	}
+	return getNextRaid(now.AddDate(0, 0, 1))
 }
 
 func isTimeDST(t time.Time) bool {
