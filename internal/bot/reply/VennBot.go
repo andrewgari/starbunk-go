@@ -94,7 +94,7 @@ func (b VennBot) performSpecialMessage(session *discordgo.Session, message disco
 
 	webhook.WriteMessage(session, session.Identify.Token, message.ChannelID, response, nickname, avatarUrl, nil)
 
-	time.Sleep(10 * Duration.Seconds)
+	time.Sleep(10 * 1000)
 
 	b.bluebot.HaveConversationWithVennBot(session, message.ChannelID)
 	response = "Huh? Oh sure...."
