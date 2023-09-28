@@ -33,7 +33,7 @@ func (b BananaBot) Response() string {
 
 func (b BananaBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
 	log.INFO.Println("Hello I'm Venn")
-	if message.Author.ID == b.UserID && utils.PercentChance(1) {
+	if message.Author.ID == b.UserID && utils.PercentChance(5) {
 		var username = message.Author.Username
 		var avatarURL = message.Author.AvatarURL("")
 		var member, error = session.GuildMember(b.GuildID, message.Author.ID)

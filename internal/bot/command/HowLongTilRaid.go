@@ -59,26 +59,9 @@ func (c HowLongTilRaid) ProcessMessage(session *discordgo.Session, message disco
 }
 
 func getNextRaid(now time.Time) time.Time {
-	if now.Weekday() == time.Monday || now.Weekday() == time.Thursday {
+	if now.Weekday() == time.Tuesday || now.Weekday() == time.Wednesday {
 		raidTime := time.Date(now.Year(), now.Month(), now.Day(), 24, 0, 0, 0, now.UTC().Location())
 		return raidTime
 	}
 	return getNextRaid(now.AddDate(0, 0, 1))
-}
-
-func isTimeDST(t time.Time) bool {
-	hh, mm, _ := t.UTC().Clock()
-	tClock := hh*60 + mm
-	for m := -1; m > -12; m-- {
-		// assume dst lasts for least one month
-		hh, mm, _ := t.AddDate(0, m, 0).UTC().Clock()
-		clock := hh*60 + mm
-		if clock != tClock {
-			log.INFO.Println("It is DST")
-			return clock > tClock
-		}
-	}
-	log.INFO.Println("It is not DST")
-	// assume no dst
-	return false
 }

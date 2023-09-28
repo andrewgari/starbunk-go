@@ -5,6 +5,7 @@ import (
 	"starbunk-bot/internal/utils"
 	"starbunk-bot/internal/webhook"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -14,6 +15,7 @@ type VennBot struct {
 	GuildID       string
 	Responses     []string
 	Bananasponses []string
+	bluebot       BluBot
 }
 
 func (b VennBot) ObserverName() string {
@@ -33,7 +35,19 @@ func (b VennBot) Response(responses []string) string {
 	return response
 }
 
+func (b VennBot) shouldSendSpecialResponse() bool {
+	return utils.RandomRoll(100) < 2
+}
+
 func (b VennBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
+	if b.shouldSendSpecialResponse() {
+		b.performSpecialMessage(session, message)
+	} else {
+		b.performNormalMessage(session, message)
+	}
+}
+
+func (b VennBot) performNormalMessage(session *discordgo.Session, message discordgo.Message) {
 	if message.Author.ID == b.UserID {
 		log.INFO.Println("Hello I'm Venn")
 		response := ""
@@ -71,4 +85,22 @@ func (b VennBot) HandleMessage(session *discordgo.Session, message discordgo.Mes
 			webhook.WriteMessage(session, session.Identify.Token, message.ChannelID, response, username, avatarURL, nil)
 		}
 	}
+}
+
+func (b VennBot) performSpecialMessage(session *discordgo.Session, message discordgo.Message) {
+	nickname := utils.GetNickname(session, message)
+	avatarUrl := utils.GetAvatarUrl(session, message)
+	response := "Well said, Venn, well said."
+
+	webhook.WriteMessage(session, session.Identify.Token, message.ChannelID, response, nickname, avatarUrl, nil)
+
+	time.Sleep(10 * Duration.Seconds)
+
+	b.bluebot.HaveConversationWithVennBot(session, message.ChannelID)
+	response = "Huh? Oh sure...."
+	webhook.WriteMessage(session, session.Identify.Token, message.ChannelID, response, nickname, avatarUrl, nil)
+
+	time.Sleep(3 * 1000)
+	response = "Yo, @Venn. I've conferred with my peers and I retract my earlier compliment. That was actually mega crigne."
+	webhook.WriteMessage(session, session.Identify.Token, message.ChannelID, response, nickname, avatarUrl, nil)
 }

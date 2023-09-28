@@ -23,14 +23,15 @@ func (b MacaroniBot) AvatarURL() string {
 }
 
 var (
-	vennPattern      string = "\\bvenn\\b"
-	macaroniPattern  string = "\\bmacaroni\\b"
-	vennResponse     string = `Correction: you mean Venn "Tyrone "The "Macaroni" Man" Johnson" Caelum`
-	macaroniResponse string = "Are you trying to reach <@&%s>"
+	vennPattern         string = "\\bvenn\\b"
+	macaroniPattern     string = "\\bmacaroni\\b"
+	vennResponse        string = `Correction: you mean Venn "Tyrone "The "Macaroni" Man" Johnson" Caelum`
+	macaroniResponse    string = "Are you trying to reach <@&%s>"
+	macaroniNamePattern string = `venn(?!.*Tyrone "The "Macaroni" Man" Johnson" Caelum).*`
 )
 
 func (b MacaroniBot) HandleMessage(session *discordgo.Session, message discordgo.Message) {
-	if utils.Match(vennPattern, message.Content) {
+	if utils.Match(vennPattern, message.Content) && !utils.Match(macaroniNamePattern, message.Content) {
 		webhook.WriteMessage(session, session.Identify.Token, message.ChannelID, vennResponse, b.Name, b.AvatarURL(), nil)
 	}
 	if utils.Match(macaroniPattern, message.Content) {
