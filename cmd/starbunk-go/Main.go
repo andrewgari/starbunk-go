@@ -93,3 +93,12 @@ func onUserVoiceStateChange(s *discordgo.Session, v *discordgo.VoiceStateUpdate)
 	}
 	observer.VoiceService.Broadcast(s, *v)
 }
+
+func basicCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: "Hey, you did it!",
+		},
+	})
+}

@@ -13,7 +13,7 @@ func RegisterReplyBots() {
 	observer.MessageService.AddObserver(reply.BluBot{Name: "BluBot"})
 	observer.MessageService.AddObserver(reply.ChaosBot{Name: "ChaosBot"})
 	observer.MessageService.AddObserver(reply.CheckBot{Name: "CzechBot"})
-	observer.MessageService.AddObserver(reply.DeafBot{Name: "DeafBot", ID: config.UserIDs["Deaf"]})
+	// observer.MessageService.AddObserver(reply.DeafBot{Name: "DeafBot", ID: config.UserIDs["Deaf"]})
 	observer.MessageService.AddObserver(reply.EzioBot{Name: "Ezio Auditore Da Firenze", ID: config.UserIDs["Bender"]})
 	observer.MessageService.AddObserver(reply.GundamBot{Name: "That Famous Unicorn Robot, \"Gandum\""})
 	observer.MessageService.AddObserver(reply.HoldBot{Name: "HoldBot"})
@@ -52,6 +52,7 @@ func RegisterReplyBots() {
 		"const bestFruit = ('b' + 'a' + + 'a').toLowerCase(); :banana:",
 		"Did you know that the :banana:s we have today aren't even the same species of :banana:s we had 50 years ago. The fruit has gone extinct over time and it's actually a giant eugenics experimet to produce new species of :banana:...",
 		"Monkeys always ask 'Wher :banana:', but none of them ask 'How :banana:?'",
+		":banana: https://www.tiktok.com/@tracey_dintino_charles/video/7197753358143278378?_r=1&_t=8bFpt5cfIbG",
 	)
 	guyResponses := make([]string, 0)
 	guyResponses = append(guyResponses,
@@ -88,25 +89,13 @@ func RegisterReplyBots() {
 			TriviaReviewChannel: config.ChannelIDs["TriviaReview"],
 		})
 	observer.MessageService.AddObserver(reply.SixtyNineBot{Name: "CovaBot"})
+	observer.MessageService.AddObserver(reply.TheBabyBot{Name: "Samus Aran"})
 }
 
 func RegisterCommandBots() {
 	observer.CommandBots["clearWebhooks"] = command.ClearWebhooks{Command: "clearWebhooks", GuildID: config.GuildIDs["Starbunk"]}
-	observer.CommandBots["nebula"] =
-		command.NebulaBot{
-			Command:        "nebula",
-			NebulaLeadRole: config.RoleIDs["NebulaLead"],
-			AllowedRoles:   map[string]string{"Nebula": config.RoleIDs["Nebula"], "NebulaGuest": config.RoleIDs["NebulaGuest"], "NebulaAlum": config.RoleIDs["NebulaAlum"]},
-		}
-	observer.CommandBots["scheduleRaid"] =
-		command.CreateEventBot{
-			Command:             "scheduleRaid",
-			NebulaLeadRole:      config.RoleIDs["NebulaLead"],
-			NebulaAnnouncements: config.ChannelIDs["NebulaAnnouncements"],
-			NebulaBunker:        config.ChannelIDs["NebulaBunker"],
-		}
 	observer.CommandBots["raidwhen"] =
-		command.HowLongTilRaid{Command: "raidwhen"}
+	command.HowLongTilRaid{Command: "raidwhen", CovaID: config.UserIDs["Cova"], RaidTeamID: config.RoleIDs["RaidTeam"]}
 }
 
 func RegisterVoiceBots() {

@@ -22,7 +22,7 @@ func (b PickleBot) AvatarURL() string {
 }
 
 func (b PickleBot) Pattern() string {
-	return "klavier"
+	return "gremlin"
 }
 
 func (b PickleBot) Response() string {

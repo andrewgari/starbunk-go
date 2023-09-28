@@ -118,3 +118,7 @@ func (b BluBot) isVennInsultingBlu(message, authorID string) bool {
 	}
 	return false
 }
+
+func (b BluBot) HaveConversationWithVennBot(session *discordgo.Session, channelID string) {
+	webhook.WriteMessage(session, session.Identify.Token, channelID, "VennBot, might I have a word...", b.Name, b.AvatarURL(), nil)
+}
