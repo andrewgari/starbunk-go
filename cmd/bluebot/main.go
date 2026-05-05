@@ -17,7 +17,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	if m.Content == "ping bluebot" {
-		sender := discord.NewSDKMessageSender(s)
+		sender := discord.NewMessagingService(s)
 		_, err := sender.SendMessage(m.ChannelID, "Pong from bluebot!")
 		if err != nil {
 			log.Printf("failed to send message: %v\n", err)
