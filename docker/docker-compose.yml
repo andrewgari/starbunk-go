@@ -1,0 +1,83 @@
+version: "3.8"
+name: starbunk-go
+
+services:
+  bluebot:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        BOT_NAME: bluebot
+    container_name: starbunk-go-bluebot
+    restart: unless-stopped
+    environment:
+      - DISCORD_TOKEN=${BLUEBOT_TOKEN:-${STARBUNK_TOKEN}}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  bunkbot:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        BOT_NAME: bunkbot
+    container_name: starbunk-go-bunkbot
+    restart: unless-stopped
+    environment:
+      - DISCORD_TOKEN=${BUNKBOT_TOKEN:-${STARBUNK_TOKEN}}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  covabot:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        BOT_NAME: covabot
+    container_name: starbunk-go-covabot
+    restart: unless-stopped
+    environment:
+      - DISCORD_TOKEN=${COVABOT_TOKEN:-${STARBUNK_TOKEN}}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  djcova:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        BOT_NAME: djcova
+    container_name: starbunk-go-djcova
+    restart: unless-stopped
+    environment:
+      - DISCORD_TOKEN=${DJCOVA_TOKEN:-${STARBUNK_TOKEN}}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  ratbot:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        BOT_NAME: ratbot
+    container_name: starbunk-go-ratbot
+    restart: unless-stopped
+    environment:
+      - DISCORD_TOKEN=${RATBOT_TOKEN:-${STARBUNK_TOKEN}}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

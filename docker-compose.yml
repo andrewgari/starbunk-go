@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  bunkbot:
+    build:
+      context: ./bunkbot
+    environment:
+      - DISCORD_TOKEN=${BUNKBOT_TOKEN}
+    restart: unless-stopped
+
+  bluebot:
+    build:
+      context: ./bluebot
+    environment:
+      - DISCORD_TOKEN=${BLUEBOT_TOKEN}
+    restart: unless-stopped
+
+  covabot:
+    build:
+      context: ./covabot
+    environment:
+      - DISCORD_TOKEN=${COVABOT_TOKEN}
+    restart: unless-stopped
+
+  djcova:
+    build:
+      context: ./djcova
+    environment:
+      - DISCORD_TOKEN=${DJCOVA_TOKEN}
+    restart: unless-stopped
+
+  ratbot:
+    build:
+      context: ./ratbot
+    environment:
+      - DISCORD_TOKEN=${RATBOT_TOKEN}
+    restart: unless-stopped
