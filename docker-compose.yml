@@ -1,37 +1,88 @@
-version: '3.8'
+# Production docker-compose — pulls pre-built images from GHCR.
+# For local development (build from source), use docker/docker-compose.yml.
+#
+# On the Tower server this file is managed by deploy.sh and expects a
+# stack.env file alongside it containing the bot Discord tokens:
+#
+#   STARBUNK_TOKEN=<fallback>
+#   BLUEBOT_TOKEN=<token>
+#   BUNKBOT_TOKEN=<token>
+#   COVABOT_TOKEN=<token>
+#   DJCOVA_TOKEN=<token>
+#   RATBOT_TOKEN=<token>
+#
+# IMAGE_TAG is set by deploy.sh (defaults to "latest").
+
+version: "3.8"
+name: starbunk-go
 
 services:
-  bunkbot:
-    build:
-      context: ./bunkbot
-    environment:
-      - DISCORD_TOKEN=${BUNKBOT_TOKEN}
-    restart: unless-stopped
-
   bluebot:
-    build:
-      context: ./bluebot
-    environment:
-      - DISCORD_TOKEN=${BLUEBOT_TOKEN}
+    image: ghcr.io/andrewgari/starbunk-go-bluebot:${IMAGE_TAG:-latest}
+    container_name: starbunk-go-bluebot
     restart: unless-stopped
+    environment:
+      - DISCORD_TOKEN=${BLUEBOT_TOKEN:-${STARBUNK_TOKEN}}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  bunkbot:
+    image: ghcr.io/andrewgari/starbunk-go-bunkbot:${IMAGE_TAG:-latest}
+    container_name: starbunk-go-bunkbot
+    restart: unless-stopped
+    environment:
+      - DISCORD_TOKEN=${BUNKBOT_TOKEN:-${STARBUNK_TOKEN}}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
   covabot:
-    build:
-      context: ./covabot
-    environment:
-      - DISCORD_TOKEN=${COVABOT_TOKEN}
+    image: ghcr.io/andrewgari/starbunk-go-covabot:${IMAGE_TAG:-latest}
+    container_name: starbunk-go-covabot
     restart: unless-stopped
+    environment:
+      - DISCORD_TOKEN=${COVABOT_TOKEN:-${STARBUNK_TOKEN}}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
   djcova:
-    build:
-      context: ./djcova
-    environment:
-      - DISCORD_TOKEN=${DJCOVA_TOKEN}
+    image: ghcr.io/andrewgari/starbunk-go-djcova:${IMAGE_TAG:-latest}
+    container_name: starbunk-go-djcova
     restart: unless-stopped
+    environment:
+      - DISCORD_TOKEN=${DJCOVA_TOKEN:-${STARBUNK_TOKEN}}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
   ratbot:
-    build:
-      context: ./ratbot
-    environment:
-      - DISCORD_TOKEN=${RATBOT_TOKEN}
+    image: ghcr.io/andrewgari/starbunk-go-ratbot:${IMAGE_TAG:-latest}
+    container_name: starbunk-go-ratbot
     restart: unless-stopped
+    environment:
+      - DISCORD_TOKEN=${RATBOT_TOKEN:-${STARBUNK_TOKEN}}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
