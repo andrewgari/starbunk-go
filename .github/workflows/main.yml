@@ -266,6 +266,8 @@ jobs:
     name: Semver Version Tags
     runs-on: ubuntu-latest
     needs: [detect_changes, validate_devops, lint, test, docker_publish]
+    outputs:
+      repo_version: ${{ steps.create_repo_tag.outputs.repo_version }}
     if: >-
       always() &&
       !cancelled() &&
@@ -386,6 +388,43 @@ jobs:
             fi
           done
 
+      - name: Create repo-level semver tag
+        id: create_repo_tag
+        run: |
+          BUMP_TYPE="${{ steps.bump.outputs.type }}"
+
+          LATEST=$(git tag -l "v[0-9]*" \
+            | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+$" \
+            | sort -V | tail -1)
+
+          if [ -z "$LATEST" ]; then
+            case $BUMP_TYPE in
+              major) NEW="1.0.0" ;;
+              minor) NEW="0.1.0" ;;
+              *)     NEW="0.0.1" ;;
+            esac
+          else
+            VER=${LATEST#v}
+            MA=$(echo "$VER" | cut -d. -f1)
+            MI=$(echo "$VER" | cut -d. -f2)
+            PA=$(echo "$VER" | cut -d. -f3)
+            case $BUMP_TYPE in
+              major) NEW="$((MA+1)).0.0" ;;
+              minor) NEW="${MA}.$((MI+1)).0" ;;
+              *)     NEW="${MA}.${MI}.$((PA+1))" ;;
+            esac
+          fi
+
+          TAG="v${NEW}"
+          if git tag -l "$TAG" | grep -q "^${TAG}$"; then
+            echo "Tag ${TAG} already exists — skipping"
+          else
+            git tag "$TAG" "${{ github.sha }}" -m "Release ${TAG}"
+            git push origin "$TAG"
+            echo "Created repo tag: ${TAG}"
+          fi
+          echo "repo_version=${NEW}" >> $GITHUB_OUTPUT
+
   # ─── Publish GitHub Release ───────────────────────────────────────────────────
   #
   # Creates a GitHub Release using the build tag once images are published and
@@ -418,7 +457,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          REPO_VERSION="${{ needs.semver_tag.outputs.repo_version }}"
           BUILD_TAG="${{ needs.tag_release.outputs.build_tag }}"
+
+          # Use semver tag as release name when available; fall back to build tag for CI-only runs.
+          if [ -n "$REPO_VERSION" ]; then
+            RELEASE_TAG="v${REPO_VERSION}"
+          else
+            RELEASE_TAG="$BUILD_TAG"
+          fi
 
           # Build release notes listing each bumped bot's new version.
           NOTES="## Deployed Images\n\nAll images tagged \`:latest\` and \`:main\`.\n"
@@ -434,8 +481,8 @@ jobs:
             done
           fi
 
-          gh release create "$BUILD_TAG" \
-            --title "Build ${BUILD_TAG}" \
+          gh release create "$RELEASE_TAG" \
+            --title "$RELEASE_TAG" \
             --notes "$(printf '%b' "$NOTES")" \
             --latest
-          echo "Created release: ${BUILD_TAG}"
+          echo "Created release: ${RELEASE_TAG}"
