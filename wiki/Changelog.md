@@ -5,6 +5,15 @@ Add an entry under today's date for every PR or significant change.
 
 ---
 
+## 2026-05-07 (5)
+
+- Added 4 custom Claude Code subagents to `.claude/agents/`:
+  - `go-craftsman` — Go code writing, idiomatic patterns, naming, aesthetics
+  - `architect` — High-level planning, cross-cutting concerns, directing other agents (uses Opus)
+  - `pm` — Requirements gathering, clarifying questions, scope alignment
+  - `devops` — GitHub, CI/CD, Docker, deployment management
+- Added `wiki/agents/Agents.md` documenting the agents and when to use each.
+
 ## 2026-05-07 (4)
 
 - Fixed `main.yml`: `semver_tag` and `tag_release` jobs now depend on `validate_devops`, `lint`, and `test` directly instead of `docker_publish`. This ensures git tags are always created when code changes and tests pass, even if Docker image publishing partially fails for one or more bots.
