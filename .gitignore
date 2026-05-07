@@ -25,3 +25,6 @@ Thumbs.db
 # Go test cache
 *.test
 *.prof
+
+# Wiki staging area (drafts only — not canonical docs)
+wiki/raw/
