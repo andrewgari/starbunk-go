@@ -274,8 +274,7 @@ jobs:
       needs.detect_changes.result == 'success' &&
       needs.validate_devops.result == 'success' &&
       needs.lint.result == 'success' &&
-      needs.test.result == 'success' &&
-      needs.detect_changes.outputs.versioned_bots != '[]'
+      needs.test.result == 'success'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -320,6 +319,7 @@ jobs:
           echo "Bump type: ${BUMP_TYPE}"
 
       - name: Create semver git tags
+        if: needs.detect_changes.outputs.versioned_bots != '[]'
         run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
@@ -391,6 +391,8 @@ jobs:
       - name: Create repo-level semver tag
         id: create_repo_tag
         run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
           BUMP_TYPE="${{ steps.bump.outputs.type }}"
 
           LATEST=$(git tag -l "v[0-9]*" \
@@ -458,14 +460,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           REPO_VERSION="${{ needs.semver_tag.outputs.repo_version }}"
-          BUILD_TAG="${{ needs.tag_release.outputs.build_tag }}"
-
-          # Use semver tag as release name when available; fall back to build tag for CI-only runs.
-          if [ -n "$REPO_VERSION" ]; then
-            RELEASE_TAG="v${REPO_VERSION}"
-          else
-            RELEASE_TAG="$BUILD_TAG"
-          fi
+          RELEASE_TAG="v${REPO_VERSION}"
 
           # Build release notes listing each bumped bot's new version.
           NOTES="## Deployed Images\n\nAll images tagged \`:latest\` and \`:main\`.\n"
