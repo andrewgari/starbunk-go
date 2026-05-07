@@ -2,6 +2,7 @@
 /bin/
 cmd/*/main
 cmd/*/*
+!cmd/*/*.md
 
 # Build output
 *.exe

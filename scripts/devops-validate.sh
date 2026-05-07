@@ -94,7 +94,7 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 if [ $ERRORS -gt 0 ]; then
   echo "FAILED — $ERRORS consistency error(s). Fix the files listed above before"
-  echo "         committing. See CLAUDE.md § 'DevOps File Maintenance' for the"
+  echo "         committing. See AGENTS.md § 'DevOps File Maintenance' for the"
   echo "         full list of files that must stay in sync."
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   exit 1
