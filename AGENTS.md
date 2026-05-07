@@ -232,8 +232,11 @@ audio, manages a per-guild queue. Requires additional voice intents. Ported from
 starbunk-js. See `cmd/djcova/CLAUDE.md` and `wiki/bots/DJCova.md`.
 
 ### ratbot
-Watches for rat-related triggers in messages and responds accordingly. See
-`cmd/ratbot/CLAUDE.md` and `wiki/bots/RatBot.md`.
+Rat-themed **Secret Santa bot** that organises the guild's "Ratmas" gift
+exchange. Handles sign-ups, randomly assigns gifters to recipients (no
+self-assignment), notifies participants via DM, and posts Ratmas announcements
+with full rat-themed copy. See `cmd/ratbot/CLAUDE.md` and
+`wiki/bots/RatBot.md`.
 
 ---
 
