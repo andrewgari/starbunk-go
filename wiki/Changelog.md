@@ -5,6 +5,13 @@ Add an entry under today's date for every PR or significant change.
 
 ---
 
+## 2026-05-07 (6)
+
+- `deploy.yml` now triggers on `release: published` instead of `workflow_run`.
+- `main.yml` gains a new `publish_release` job that creates a GitHub Release (using the build tag) once Docker images are successfully published and semver tags are created. The release notes list each changed bot and its new version.
+- Deploy uses the `:latest` image tag (was `:main`) and passes the release tag name as the version label.
+- This ensures deployment happens exactly once per PR merge that produces new images, and only after all upstream jobs succeed.
+
 ## 2026-05-07 (5)
 
 - Added 4 custom Claude Code subagents to `.claude/agents/`:

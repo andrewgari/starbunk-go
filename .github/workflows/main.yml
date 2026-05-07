@@ -200,6 +200,8 @@ jobs:
     name: Tag Release
     runs-on: ubuntu-latest
     needs: [detect_changes, validate_devops, lint, test, docker_publish]
+    outputs:
+      build_tag: ${{ steps.create_build_tag.outputs.build_tag }}
     if: >-
       always() &&
       !cancelled() &&
@@ -235,12 +237,14 @@ jobs:
           done
 
       - name: Create build tag
+        id: create_build_tag
         run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           BUILD_TAG="build-$(date +%Y%m%d)-${SHORT_SHA}"
           git tag "$BUILD_TAG" -m "CI build ${GITHUB_RUN_NUMBER} from ${GITHUB_SHA:0:7}"
           git push origin "$BUILD_TAG"
+          echo "build_tag=$BUILD_TAG" >> $GITHUB_OUTPUT
           echo "Created build tag: ${BUILD_TAG}"
 
   # ─── Semver version tags ──────────────────────────────────────────────────────
@@ -381,3 +385,57 @@ jobs:
               echo "Tagged ${IMAGE}:v${VERSION}"
             fi
           done
+
+  # ─── Publish GitHub Release ───────────────────────────────────────────────────
+  #
+  # Creates a GitHub Release using the build tag once images are published and
+  # semver tags are created. This release event is the trigger for deploy.yml.
+  #
+  # Skipped when docker_publish did not succeed (e.g. workflow failed mid-run).
+  publish_release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    needs: [detect_changes, validate_devops, lint, test, docker_publish, tag_release, semver_tag]
+    if: >-
+      always() &&
+      !cancelled() &&
+      needs.detect_changes.result == 'success' &&
+      needs.validate_devops.result == 'success' &&
+      needs.lint.result == 'success' &&
+      needs.test.result == 'success' &&
+      needs.docker_publish.result == 'success' &&
+      needs.tag_release.result == 'success' &&
+      (needs.semver_tag.result == 'success' || needs.semver_tag.result == 'skipped')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all tags
+        run: git fetch --tags
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BUILD_TAG="${{ needs.tag_release.outputs.build_tag }}"
+
+          # Build release notes listing each bumped bot's new version.
+          NOTES="## Deployed Images\n\nAll images tagged \`:latest\` and \`:main\`.\n"
+          VERSIONED_BOTS=$(echo '${{ needs.detect_changes.outputs.versioned_bots }}' | jq -r '.[]' 2>/dev/null || true)
+          if [ -n "$VERSIONED_BOTS" ]; then
+            NOTES+="\n## Bot Versions\n\n"
+            for BOT in $VERSIONED_BOTS; do
+              VERSION=$(git tag -l "${BOT}/v*" \
+                | grep -E "^${BOT}/v[0-9]+\.[0-9]+\.[0-9]+$" \
+                | sort -V | tail -1 \
+                | sed "s|^${BOT}/v||")
+              [ -n "$VERSION" ] && NOTES+="- \`${BOT}\` → v${VERSION}\n"
+            done
+          fi
+
+          gh release create "$BUILD_TAG" \
+            --title "Build ${BUILD_TAG}" \
+            --notes "$(printf '%b' "$NOTES")" \
+            --latest
+          echo "Created release: ${BUILD_TAG}"
