@@ -34,6 +34,9 @@ with no shared database dependencies (yet).
 - [[development/Testing|Testing]] — Ginkgo/Gomega test guide
 - [[development/CI-CD|CI/CD]] — GitHub Actions workflows
 
+### AI Agents
+- [[agents/Agents|Custom Agents]] — Claude Code subagents: go-craftsman, architect, pm, devops
+
 ### History
 - [[Changelog|Changelog]] — Running log of all work done on this project
 
