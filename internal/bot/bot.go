@@ -11,7 +11,7 @@ import (
 )
 
 // Run initialized a discord session, registers the provided handlers, and waits for a kill signal.
-func Run(botName string, handlers ...interface{}) {
+func Run(botName string, handlers ...any) {
 	token := os.Getenv("DISCORD_TOKEN")
 	if token == "" {
 		log.Fatal("DISCORD_TOKEN environment variable not set")
@@ -38,5 +38,7 @@ func Run(botName string, handlers ...interface{}) {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
 
-	dg.Close()
+	if err := dg.Close(); err != nil {
+		log.Printf("error closing Discord session for %s: %v", botName, err)
+	}
 }
