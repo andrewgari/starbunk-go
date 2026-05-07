@@ -199,12 +199,14 @@ jobs:
   tag_release:
     name: Tag Release
     runs-on: ubuntu-latest
-    needs: [detect_changes, docker_publish]
+    needs: [detect_changes, validate_devops, lint, test, docker_publish]
     if: >-
       always() &&
       !cancelled() &&
       needs.detect_changes.result == 'success' &&
-      (needs.docker_publish.result == 'success' || needs.docker_publish.result == 'skipped')
+      needs.validate_devops.result == 'success' &&
+      needs.lint.result == 'success' &&
+      needs.test.result == 'success'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -259,12 +261,14 @@ jobs:
   semver_tag:
     name: Semver Version Tags
     runs-on: ubuntu-latest
-    needs: [detect_changes, docker_publish]
+    needs: [detect_changes, validate_devops, lint, test, docker_publish]
     if: >-
       always() &&
       !cancelled() &&
       needs.detect_changes.result == 'success' &&
-      (needs.docker_publish.result == 'success' || needs.docker_publish.result == 'skipped') &&
+      needs.validate_devops.result == 'success' &&
+      needs.lint.result == 'success' &&
+      needs.test.result == 'success' &&
       needs.detect_changes.outputs.versioned_bots != '[]'
     steps:
       - uses: actions/checkout@v4

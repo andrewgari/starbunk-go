@@ -5,6 +5,10 @@ Add an entry under today's date for every PR or significant change.
 
 ---
 
+## 2026-05-07 (4)
+
+- Fixed `main.yml`: `semver_tag` and `tag_release` jobs now depend on `validate_devops`, `lint`, and `test` directly instead of `docker_publish`. This ensures git tags are always created when code changes and tests pass, even if Docker image publishing partially fails for one or more bots.
+
 ## 2026-05-07 (3)
 
 - Added per-bot semver versioning: each bot (`bluebot`, `bunkbot`, `covabot`, `djcova`, `ratbot`) now gets an independent `<bot>/vX.Y.Z` git tag on every merge to `main`.
