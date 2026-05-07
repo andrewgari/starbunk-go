@@ -83,11 +83,29 @@ jobs:
       - name: Check all DevOps files are in sync
         run: bash scripts/devops-validate.sh
 
+  # ─── Lint ────────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    needs: detect_changes
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false  # golangci-lint manages its own cache
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+
   # ─── Test ────────────────────────────────────────────────────────────────────
   test:
     name: Test
     runs-on: ubuntu-latest
-    needs: [detect_changes, validate_devops]
+    needs: [detect_changes, validate_devops, lint]
     steps:
       - uses: actions/checkout@v4
 
@@ -109,7 +127,7 @@ jobs:
   docker_publish:
     name: Docker Publish / ${{ matrix.bot }}
     runs-on: ubuntu-latest
-    needs: [detect_changes, validate_devops, test]
+    needs: [detect_changes, validate_devops, lint, test]
     strategy:
       fail-fast: false
       matrix:

@@ -3,11 +3,69 @@ name: CI / Pull Request
 on:
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
+
+  # ─── Detect which bots changed ───────────────────────────────────────────────
+  detect_changes:
+    name: Detect Changed Bots
+    runs-on: ubuntu-latest
+    outputs:
+      bots: ${{ steps.matrix.outputs.bots }}
+      has_bot_changes: ${{ steps.matrix.outputs.has_bot_changes }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            bluebot:
+              - 'cmd/bluebot/**'
+            bunkbot:
+              - 'cmd/bunkbot/**'
+            covabot:
+              - 'cmd/covabot/**'
+            djcova:
+              - 'cmd/djcova/**'
+            ratbot:
+              - 'cmd/ratbot/**'
+            internal:
+              - 'internal/**'
+              - 'go.mod'
+              - 'go.sum'
+              - 'docker/Dockerfile'
+
+      - name: Build bot matrix
+        id: matrix
+        run: |
+          BOTS=()
+          # Shared code changes rebuild every bot.
+          if [ "${{ steps.filter.outputs.internal }}" == "true" ]; then
+            BOTS=("bluebot" "bunkbot" "covabot" "djcova" "ratbot")
+          else
+            [[ "${{ steps.filter.outputs.bluebot }}" == "true" ]] && BOTS+=("bluebot")
+            [[ "${{ steps.filter.outputs.bunkbot }}" == "true" ]] && BOTS+=("bunkbot")
+            [[ "${{ steps.filter.outputs.covabot }}" == "true" ]] && BOTS+=("covabot")
+            [[ "${{ steps.filter.outputs.djcova }}"  == "true" ]] && BOTS+=("djcova")
+            [[ "${{ steps.filter.outputs.ratbot }}"  == "true" ]] && BOTS+=("ratbot")
+          fi
+
+          if [ ${#BOTS[@]} -eq 0 ]; then
+            echo 'bots=[]' >> $GITHUB_OUTPUT
+            echo 'has_bot_changes=false' >> $GITHUB_OUTPUT
+          else
+            BOTS_JSON=$(printf '%s\n' "${BOTS[@]}" | jq -R . | jq -sc .)
+            echo "bots=$BOTS_JSON" >> $GITHUB_OUTPUT
+            echo 'has_bot_changes=true' >> $GITHUB_OUTPUT
+          fi
+
+  # ─── DevOps consistency gate ─────────────────────────────────────────────────
   validate_devops:
     name: Validate DevOps Consistency
     runs-on: ubuntu-latest
@@ -16,6 +74,24 @@ jobs:
       - name: Check all DevOps files are in sync
         run: bash scripts/devops-validate.sh
 
+  # ─── Lint ────────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false  # golangci-lint manages its own cache
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+
+  # ─── Unit Tests ──────────────────────────────────────────────────────────────
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -36,14 +112,16 @@ jobs:
       - name: Run tests
         run: go test ./... -v
 
+  # ─── Build binaries (selective) ──────────────────────────────────────────────
   build:
     name: Build / ${{ matrix.bot }}
     runs-on: ubuntu-latest
-    needs: [validate_devops, test]
+    needs: [detect_changes, validate_devops, lint, test]
+    if: needs.detect_changes.outputs.has_bot_changes == 'true'
     strategy:
       fail-fast: false
       matrix:
-        bot: [bluebot, bunkbot, covabot, djcova, ratbot]
+        bot: ${{ fromJson(needs.detect_changes.outputs.bots) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -54,3 +132,120 @@ jobs:
 
       - name: Build ${{ matrix.bot }}
         run: go build -o /dev/null ./cmd/${{ matrix.bot }}
+
+  # ─── Docker build + container smoke test + GHCR publish (selective) ──────────
+  docker_test:
+    name: Docker Test / ${{ matrix.bot }}
+    runs-on: ubuntu-latest
+    needs: [detect_changes, build]
+    if: needs.detect_changes.outputs.has_bot_changes == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        bot: ${{ fromJson(needs.detect_changes.outputs.bots) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Compute content hash
+        id: meta
+        run: |
+          BOT=${{ matrix.bot }}
+          SRC_HASH=$(git rev-parse HEAD:cmd/${BOT} 2>/dev/null || echo "no-hash")
+          INT_HASH=$(git rev-parse HEAD:internal 2>/dev/null || echo "no-internal")
+          MOD_HASH=$(sha256sum go.sum | cut -d' ' -f1 | head -c 12)
+          CONTENT_HASH="${SRC_HASH:0:12}-${INT_HASH:0:12}-${MOD_HASH}"
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE="ghcr.io/${OWNER_LC}/starbunk-go-${BOT}"
+          echo "content_hash=${CONTENT_HASH}" >> $GITHUB_OUTPUT
+          echo "image=${IMAGE}" >> $GITHUB_OUTPUT
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if content-identical image already exists
+        id: cache_check
+        run: |
+          IMAGE="${{ steps.meta.outputs.image }}"
+          HASH="${{ steps.meta.outputs.content_hash }}"
+          if docker manifest inspect "${IMAGE}:sha-${HASH}" > /dev/null 2>&1; then
+            echo "hit=true" >> $GITHUB_OUTPUT
+            echo "Content-identical image already in GHCR: ${IMAGE}:sha-${HASH}"
+          else
+            echo "hit=false" >> $GITHUB_OUTPUT
+            echo "No cached image found for hash ${HASH}. Build required."
+          fi
+
+      - name: Build Docker image
+        if: steps.cache_check.outputs.hit == 'false'
+        run: |
+          docker build \
+            -f docker/Dockerfile \
+            --build-arg BOT_NAME="${{ matrix.bot }}" \
+            -t "${{ steps.meta.outputs.image }}:ci-test" \
+            .
+
+      - name: Pull cached image for smoke test
+        if: steps.cache_check.outputs.hit == 'true'
+        run: |
+          IMAGE="${{ steps.meta.outputs.image }}"
+          HASH="${{ steps.meta.outputs.content_hash }}"
+          docker pull "${IMAGE}:sha-${HASH}"
+          docker tag "${IMAGE}:sha-${HASH}" "${IMAGE}:ci-test"
+
+      - name: Smoke test — container starts without crashing
+        run: |
+          IMAGE="${{ steps.meta.outputs.image }}"
+          BOT="${{ matrix.bot }}"
+          echo "Running smoke test for ${BOT}..."
+
+          OUTPUT=$(timeout 10 docker run --rm \
+            -e DISCORD_TOKEN=invalid_ci_test_token \
+            "${IMAGE}:ci-test" 2>&1) || true
+
+          echo "=== Container output ==="
+          echo "$OUTPUT"
+          echo "========================"
+
+          # Binary/OS-level failure
+          if echo "$OUTPUT" | grep -q "exec format error"; then
+            echo "FAIL: exec format error — wrong architecture or corrupt binary"
+            exit 1
+          fi
+
+          # Go runtime panic
+          if echo "$OUTPUT" | grep -qE "^panic:"; then
+            echo "FAIL: Go panic in container output"
+            exit 1
+          fi
+
+          # Go runtime error (nil pointer, index out of range, etc.)
+          if echo "$OUTPUT" | grep -q "runtime error:"; then
+            echo "FAIL: Go runtime error in container output"
+            exit 1
+          fi
+
+          # Goroutine stack dump (accompanies panics)
+          if echo "$OUTPUT" | grep -qE "^goroutine [0-9]+ \["; then
+            echo "FAIL: Goroutine stack dump detected — likely a panic"
+            exit 1
+          fi
+
+          echo "OK: Smoke test passed for ${BOT}"
+
+      - name: Push new image and tag as latest
+        if: steps.cache_check.outputs.hit == 'false'
+        run: |
+          IMAGE="${{ steps.meta.outputs.image }}"
+          HASH="${{ steps.meta.outputs.content_hash }}"
+          docker tag "${IMAGE}:ci-test" "${IMAGE}:sha-${HASH}"
+          docker push "${IMAGE}:sha-${HASH}"
+          docker tag "${IMAGE}:ci-test" "${IMAGE}:latest"
+          docker push "${IMAGE}:latest"
+          echo "Published ${IMAGE}:latest (sha-${HASH})"
