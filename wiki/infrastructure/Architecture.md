@@ -31,8 +31,9 @@ starbunk-go/
 
 ### `internal/bot`
 
-- `bot.Run(name, handlers...)` — reads `DISCORD_TOKEN`, creates a discordgo session,
-  registers handlers, blocks until SIGINT/SIGTERM.
+- `bot.Run(name, auditor, handlers...)` — reads `DISCORD_TOKEN`, creates a discordgo
+  session, wraps every `MessageCreate` handler with the supplied auditor, registers
+  all handlers, blocks until SIGINT/SIGTERM.
 - `Identity` / `IdentityProvider` — persona model for webhook impersonation.
   `DiscordIdentityProvider` prefers guild-member details over global user details.
 
@@ -42,15 +43,68 @@ starbunk-go/
 - `SendMessageWithIdentity` — creates/reuses a per-channel webhook to post as a
   custom user/avatar.
 
+### `internal/middleware`
+
+Composable message audit gates. Every bot must supply a `MessageAuditor` to
+`bot.Run`; no `MessageCreate` handler can be invoked without passing audit.
+
+**Interface**
+
+```go
+type MessageAuditor interface {
+    Audit(s *discordgo.Session, m *discordgo.MessageCreate) bool
+}
+```
+
+**Primitives** (by file)
+
+| File | Gates |
+|---|---|
+| `author.go` | `NotSelf`, `NotBot`, `IsBot`, `AuthorID(id)`, `NotAuthorID(id)`, `AuthorNamed(name)`, `AuthorHasRole(roleID)` |
+| `content.go` | `HasContent`, `ContentContains(substr)`, `ContentMatches(re)`, `HasAttachment` |
+| `context.go` | `GuildOnly`, `DMOnly`, `InChannel(id)`, `OnWeekdays(days...)` |
+| `random.go`  | `Chance(p)` — passes with probability p |
+
+**Combinators**
+
+```go
+AllOf(auditors...)  // all must pass; short-circuits on first failure
+AnyOf(auditors...)  // any must pass; short-circuits on first success
+Not(auditor)        // inverts result
+```
+
+**Example composition**
+
+```go
+// Bots always fail. Non-bots pass freely, except userid 111111
+// who only triggers when the message contains "bingo".
+AllOf(
+    NotBot,
+    AnyOf(
+        Not(AuthorID("111111")),
+        ContentContains("bingo"),
+    ),
+)
+```
+
+See [[../development/MessageFiltering|Message Filtering]] for the full design.
+
 ## Bot Pattern
 
 ```go
+var auditor = middleware.AllOf(
+    middleware.NotSelf,
+    middleware.NotBot,
+    middleware.GuildOnly,
+    middleware.HasContent,
+)
+
 func main() {
-    bot.Run("BotName", messageCreate)
+    bot.Run("BotName", auditor, messageCreate)
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-    if m.Author.ID == s.State.User.ID { return }
+    // Audit has already passed. No guard needed here.
     sender := discord.NewMessagingService(s)
     sender.SendMessage(m.ChannelID, "response")
 }

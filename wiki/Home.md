@@ -33,6 +33,7 @@ with no shared database dependencies (yet).
 - [[development/Getting-Started|Getting Started]] — Local dev setup
 - [[development/Testing|Testing]] — Ginkgo/Gomega test guide
 - [[development/CI-CD|CI/CD]] — GitHub Actions workflows
+- [[development/MessageFiltering|Message Filtering]] — Composable message evaluation abstraction (planned)
 
 ### AI Agents
 - [[agents/Agents|Custom Agents]] — Claude Code subagents: go-craftsman, architect, pm, devops
