@@ -5,6 +5,17 @@ Add an entry under today's date for every PR or significant change.
 
 ---
 
+## 2026-05-09
+
+- Added `internal/middleware` package: composable `MessageAuditor` interface for mandatory message evaluation.
+- Primitives split by concern across `author.go`, `content.go`, `context.go`, `random.go`.
+- Gates: `NotSelf`, `NotBot`, `IsBot`, `AuthorID`, `NotAuthorID`, `AuthorNamed`, `AuthorHasRole`, `HasContent`, `ContentContains`, `ContentMatches`, `HasAttachment`, `GuildOnly`, `DMOnly`, `InChannel`, `OnWeekdays`, `Chance`.
+- Combinators: `AllOf`, `AnyOf`, `Not`.
+- `bot.Run` signature updated to require a `MessageAuditor`; all `MessageCreate` handlers are automatically wrapped — no handler can be invoked without passing audit.
+- All 5 bots (`bluebot`, `bunkbot`, `covabot`, `djcova`, `ratbot`) updated to declare their own auditor in `main.go`; inline self-guards removed.
+- 48 Ginkgo specs covering every primitive, combinator, and both complex composition scenarios.
+- Updated `wiki/infrastructure/Architecture.md` and `wiki/development/MessageFiltering.md`.
+
 ## 2026-05-07 (6)
 
 - `deploy.yml` now triggers on `release: published` instead of `workflow_run`.
