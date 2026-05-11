@@ -55,7 +55,11 @@ func (b *ReplyBot) Handle(s *discordgo.Session, m *discordgo.MessageCreate) {
 			id = id.Resolve(s)
 		}
 
-		content := pool.Pick(m.Content)
+		content := pool.Pick(MessageData{
+			Content:        m.Content,
+			AuthorUsername: m.Author.Username,
+			AuthorID:       m.Author.ID,
+		})
 		if _, err := b.Messaging.SendMessageWithIdentity(m.ChannelID, content, id.Username, id.AvatarURL); err != nil {
 			log.Printf("replybot %q: failed to send message: %v", b.Name, err)
 		}

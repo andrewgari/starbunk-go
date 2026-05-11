@@ -58,6 +58,18 @@ func Compile(node ConditionNode) (middleware.MessageAuditor, error) {
 	if node.FromUser != "" {
 		return middleware.AuthorID(node.FromUser), nil
 	}
+	if node.NotFromUser != "" {
+		return middleware.NotAuthorID(node.NotFromUser), nil
+	}
+	if node.AuthorIsBot {
+		return middleware.IsBot, nil
+	}
+	if node.AuthorNotBot {
+		return middleware.NotBot, nil
+	}
+	if node.InChannel != "" {
+		return middleware.InChannel(node.InChannel), nil
+	}
 	if node.WithChance != nil {
 		return middleware.Chance(float64(*node.WithChance) / 100), nil
 	}

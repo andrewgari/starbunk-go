@@ -14,8 +14,17 @@ var randomPlaceholderRe = regexp.MustCompile(`\{random:(\d+)-(\d+):(.)\}`)
 // swapPlaceholderRe matches {swap_message:word1:word2} placeholders.
 var swapPlaceholderRe = regexp.MustCompile(`\{swap_message:([^:}]+):([^:}]+)\}`)
 
+// MessageData holds the author and content fields from a Discord message
+// used for response template expansion. Keeping this separate from discordgo
+// types makes the response layer independently testable.
+type MessageData struct {
+	Content       string // raw message text
+	AuthorUsername string // display/username of the message author
+	AuthorID      string // Discord user ID of the author
+}
+
 // ResponsePool holds a set of response strings and picks one at random,
-// applying template substitutions against the triggering message content.
+// applying template substitutions against the triggering message.
 type ResponsePool struct {
 	responses []string
 	rng       func(n int) int // injectable for deterministic testing
@@ -40,21 +49,29 @@ func NewResponsePoolWithRng(responses []string, rng func(int) int) (*ResponsePoo
 }
 
 // Pick selects a random response from the pool and expands template
-// placeholders against the provided message content.
+// placeholders against the provided message data.
 //
 // Template expansion order:
-//  1. {swap_message:word1:word2} — replace word1 with word2 in the original message
-//  2. {start} — the first three words of the original message
-//  3. {random:min-max:char} — char repeated a random number of times in [min, max]
-func (p *ResponsePool) Pick(messageContent string) string {
+//  1. {swap_message:word1:word2} — replace word1 with word2 in the full message
+//  2. {message}         — full message content
+//  3. {start}           — first three words of the message
+//  4. {author}          — message author's username
+//  5. {author_id}       — message author's Discord user ID
+//  6. {author_mention}  — Discord @mention (<@authorID>)
+//  7. {random:min-max:char} — char repeated a random number of times
+func (p *ResponsePool) Pick(data MessageData) string {
 	response := p.responses[p.rng(len(p.responses))]
-	return expandTemplates(response, messageContent, p.rng)
+	return expandTemplates(response, data, p.rng)
 }
 
 // expandTemplates applies all template substitutions to a response string.
-func expandTemplates(response, messageContent string, rng func(int) int) string {
-	response = expandSwapMessage(response, messageContent)
-	response = expandStart(response, messageContent)
+func expandTemplates(response string, data MessageData, rng func(int) int) string {
+	response = expandSwapMessage(response, data.Content)
+	response = strings.ReplaceAll(response, "{message}", data.Content)
+	response = expandStart(response, data.Content)
+	response = strings.ReplaceAll(response, "{author}", data.AuthorUsername)
+	response = strings.ReplaceAll(response, "{author_id}", data.AuthorID)
+	response = strings.ReplaceAll(response, "{author_mention}", "<@"+data.AuthorID+">")
 	response = expandRandom(response, rng)
 	return response
 }
@@ -68,7 +85,6 @@ func expandSwapMessage(response, messageContent string) string {
 			return match
 		}
 		from, to := parts[1], parts[2]
-		// Case-insensitive replacement preserving surrounding text.
 		re, err := regexp.Compile("(?i)" + regexp.QuoteMeta(from))
 		if err != nil {
 			return match

@@ -44,13 +44,23 @@ type TriggerConfig struct {
 // WithChance uses a pointer so that with_chance: 0 (never fire) is distinguishable
 // from the field being absent.
 type ConditionNode struct {
-	// Leaf conditions
+	// Leaf conditions — content
 	ContainsWord   string `yaml:"contains_word"`
 	ContainsPhrase string `yaml:"contains_phrase"`
 	MatchesPattern string `yaml:"matches_pattern"`
-	FromUser       string `yaml:"from_user"`
-	WithChance     *int   `yaml:"with_chance"` // 0–100; pointer so 0 is valid
 	Always         bool   `yaml:"always"`
+
+	// Leaf conditions — author
+	FromUser    string `yaml:"from_user"`
+	NotFromUser string `yaml:"not_from_user"`
+	AuthorIsBot bool   `yaml:"author_is_bot"`
+	AuthorNotBot bool  `yaml:"author_not_bot"`
+
+	// Leaf conditions — context
+	InChannel string `yaml:"in_channel"`
+
+	// Leaf conditions — probabilistic
+	WithChance *int `yaml:"with_chance"` // 0–100; pointer so 0 is valid
 
 	// Logical combinators
 	AllOf  []ConditionNode `yaml:"all_of"`
@@ -63,9 +73,13 @@ func (n ConditionNode) isEmpty() bool {
 	return n.ContainsWord == "" &&
 		n.ContainsPhrase == "" &&
 		n.MatchesPattern == "" &&
-		n.FromUser == "" &&
-		n.WithChance == nil &&
 		!n.Always &&
+		n.FromUser == "" &&
+		n.NotFromUser == "" &&
+		!n.AuthorIsBot &&
+		!n.AuthorNotBot &&
+		n.InChannel == "" &&
+		n.WithChance == nil &&
 		len(n.AllOf) == 0 &&
 		len(n.AnyOf) == 0 &&
 		len(n.NoneOf) == 0
