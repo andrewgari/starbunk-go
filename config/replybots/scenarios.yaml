@@ -1,0 +1,226 @@
+# BunkBot Reply-Bot Scenario Examples
+#
+# Each bot below demonstrates one of the core scenario types.
+# Replace placeholder user IDs (e.g. "REPLACE_WITH_USER_ID") with real Discord
+# user IDs before deploying.
+#
+# Bot identity, conditions, and responses can be freely mixed.
+# See wiki/bots/BunkBot.md for the full config reference.
+
+reply-bots:
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # SCENARIO 1 — Bot detection
+  #
+  # Fires when any bot (not BunkBot itself — that is filtered in main.go via
+  # NotSelf) posts a message. ignore_bots must be false so bot messages reach
+  # the trigger.
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: bot-detector
+    identity:
+      type: static
+      botName: Watchdog
+      avatarUrl: https://i.imgur.com/placeholder.png
+    ignore_bots: false    # must be false to see other bots' messages
+    ignore_humans: true   # only care about bots here
+    triggers:
+      - name: on-any-bot-message
+        conditions:
+          author_is_bot: true
+        responses:
+          - "beep boop — this is a bot"
+          - "robot detected 🤖"
+          - "another bot walks into a bar..."
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # SCENARIO 1b — Bot detection narrowed to a specific phrase
+  #
+  # Only fires when a bot says something containing "hello". Useful for
+  # catching automated greetings from other bots.
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: bot-greeting-detector
+    identity:
+      type: static
+      botName: BotWatch
+      avatarUrl: https://i.imgur.com/placeholder.png
+    ignore_bots: false
+    ignore_humans: true
+    triggers:
+      - name: bot-says-hello
+        conditions:
+          all_of:
+            - author_is_bot: true
+            - any_of:
+                - contains_word: hello
+                - contains_word: hi
+                - contains_phrase: good morning
+        responses:
+          - "A bot said hi! Bot: {author}"
+          - "Well well, {author} is feeling sociable today"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # SCENARIO 2 — Specific user + specific phrase → impersonation response
+  #
+  # When user REPLACE_WITH_USER_ID says "open sesame", the bot responds as
+  # REPLACE_WITH_TARGET_ID using that person's real Discord name and avatar,
+  # saying "i am <their username>".
+  #
+  # The mimic identity copies the target's nickname/avatar live from Discord.
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: impersonator
+    identity:
+      type: mimic
+      as_member: "REPLACE_WITH_TARGET_ID"   # Discord user ID to impersonate
+    ignore_bots: true
+    triggers:
+      - name: user-phrase-trigger
+        conditions:
+          all_of:
+            - from_user: "REPLACE_WITH_USER_ID"   # only this user triggers it
+            - contains_phrase: "open sesame"
+        responses:
+          - "i am {author}"
+          - "no wait, I am {author_mention}'s alter ego"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # SCENARIO 3 — Random response selection
+  #
+  # When anyone says "roll" the bot picks randomly from a large pool.
+  # Demonstrates the pool mechanic cleanly — no templates, just variety.
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: random-roller
+    identity:
+      type: random   # picks a different guild member's identity each time
+    ignore_bots: true
+    triggers:
+      - name: on-roll
+        conditions:
+          contains_word: roll
+        responses:
+          - "nat 20! 🎲"
+          - "nat 1. F."
+          - "you rolled... something. probably bad."
+          - "the dice gods are watching"
+          - "critical success! wait, no."
+          - "the RNG has spoken"
+          - "bold move, let's see how it pays off"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # SCENARIO 4 — Response uses data from the triggering message
+  #
+  # Combines {author}, {author_mention}, {start}, and {message} templates.
+  # Multiple triggers show how different conditions produce different responses
+  # that each pull data from the message.
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: echo-and-greet
+    identity:
+      type: static
+      botName: Mirror
+      avatarUrl: https://i.imgur.com/placeholder.png
+    ignore_bots: true
+    triggers:
+      - name: echo-trigger
+        conditions:
+          contains_word: echo
+        responses:
+          - "{author} said: {message}"
+          - "echoing for {author_mention}: '{start}...'"
+
+      - name: name-mention
+        conditions:
+          matches_pattern: "(?i)my name is \\w+"
+        responses:
+          - "nice to meet you, {author}!"
+          - "oh I know who you are, {author_mention} — you're the one who said '{start}'"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # SCENARIO 5 — Regex pattern matching
+  #
+  # Fires on messages that look like a phone number. Uses {message} to
+  # reflect the full content back.
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: phone-spotter
+    identity:
+      type: static
+      botName: PhoneBot
+      avatarUrl: https://i.imgur.com/placeholder.png
+    ignore_bots: true
+    triggers:
+      - name: phone-number-pattern
+        conditions:
+          matches_pattern: '\d{3}[-.\s]\d{3}[-.\s]\d{4}'
+        responses:
+          - "is that a phone number I see? '{message}'"
+          - "{author} is giving out digits: {message}"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # COMBINATION — Greeting bot with all_of + any_of + 30% chance
+  #
+  # Only fires 30% of the time when someone says a greeting. Uses a random
+  # guild member identity so the "greeter" is a different person each time.
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: occasional-greeter
+    identity:
+      type: random
+    ignore_bots: true
+    triggers:
+      - name: lucky-hello
+        conditions:
+          all_of:
+            - any_of:
+                - contains_word: hello
+                - contains_word: hi
+                - contains_word: howdy
+                - contains_phrase: hey there
+            - with_chance: 30
+        responses:
+          - "oh hey {author}!"
+          - "well hi there, {author_mention}!"
+          - "{author} walks in and says '{start}' — bold"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # COMBINATION — Exclude specific users using none_of
+  #
+  # Fires when anyone (except bots or a silenced user) says "test".
+  # Demonstrates none_of as a denylist gate.
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: test-watcher
+    identity:
+      type: static
+      botName: TestBot
+      avatarUrl: https://i.imgur.com/placeholder.png
+    ignore_bots: false   # we DO want to catch bot test messages too
+    triggers:
+      - name: test-but-not-those-guys
+        conditions:
+          all_of:
+            - contains_word: test
+            - none_of:
+                - from_user: "REPLACE_WITH_SILENCED_USER_ID"
+                - author_is_bot: true
+        responses:
+          - "test received from {author}"
+          - "{author_mention} is testing something: '{message}'"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # COMBINATION — Channel-scoped + regex + not_from_user
+  #
+  # Only fires in #announcements, only for @everyone pings, and never for the
+  # admin account (who is allowed to ping freely).
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: announcements-monitor
+    identity:
+      type: static
+      botName: AnnounceWatch
+      avatarUrl: https://i.imgur.com/placeholder.png
+    ignore_bots: true
+    triggers:
+      - name: unauthorized-everyone-ping
+        conditions:
+          all_of:
+            - in_channel: "REPLACE_WITH_ANNOUNCEMENTS_CHANNEL_ID"
+            - matches_pattern: '@everyone'
+            - not_from_user: "REPLACE_WITH_ADMIN_USER_ID"
+        responses:
+          - "hey {author_mention}, only admins can ping @everyone in here"
+          - "{author} tried to ping everyone — bold strategy"

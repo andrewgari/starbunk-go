@@ -1,0 +1,12 @@
+reply-bots:
+  - name: bye-bot
+    identity:
+      type: static
+      botName: ByeBot
+      avatarUrl: https://example.com/bye.png
+    triggers:
+      - name: on-bye
+        conditions:
+          contains_word: bye
+        responses:
+          - Goodbye!

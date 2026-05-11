@@ -5,6 +5,22 @@ Add an entry under today's date for every PR or significant change.
 
 ---
 
+## 2026-05-11
+
+- Added `internal/replybot` package: YAML-driven reply-bot engine for BunkBot.
+- New sub-packages/files: `config.go` (YAML structs), `compiler.go` (condition tree → `MessageAuditor`),
+  `identity.go` (static/mimic/random identity resolvers), `response.go` (pool + template expansion),
+  `bot.go` (`ReplyBot.Handle`), `loader.go` (`LoadFile`/`LoadDir`).
+- Condition types: `contains_word` (whole-word), `contains_phrase` (case-insensitive substring),
+  `matches_pattern` (regex), `from_user`, `with_chance`, `always`.
+- Logical operators: `all_of`, `any_of`, `none_of` — fully recursive.
+- Identity types: `static` (fixed), `mimic` (copy a Discord user), `random` (random guild member).
+- Response templates: `{start}`, `{random:min-max:char}`, `{swap_message:word1:word2}`.
+- 57 Ginkgo specs covering compiler, response pool, identity resolution, `ReplyBot.Handle`, and loader.
+- `cmd/bunkbot/main.go` updated: lazy-init handler loads YAML bots from `BUNKBOT_CONFIG_DIR` on first message.
+- `go.yaml.in/yaml/v3` promoted to direct dependency in `go.mod`.
+- Updated `wiki/bots/BunkBot.md` with full config format and architecture docs.
+
 ## 2026-05-09
 
 - Added `internal/middleware` package: composable `MessageAuditor` interface for mandatory message evaluation.

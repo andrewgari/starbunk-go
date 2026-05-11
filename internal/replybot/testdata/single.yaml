@@ -1,0 +1,15 @@
+reply-bots:
+  - name: ping-bot
+    identity:
+      type: static
+      botName: PingBot
+      avatarUrl: https://example.com/ping.png
+    ignore_bots: true
+    ignore_humans: false
+    triggers:
+      - name: on-ping
+        conditions:
+          contains_word: ping
+        responses:
+          - Pong!
+          - Got your ping!
