@@ -1,0 +1,12 @@
+reply-bots:
+  - name: bad-regex-bot
+    identity:
+      type: static
+      botName: BadBot
+      avatarUrl: https://example.com/avatar.png
+    triggers:
+      - name: broken
+        conditions:
+          matches_pattern: "["
+        responses:
+          - oops

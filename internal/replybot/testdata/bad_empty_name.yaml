@@ -1,0 +1,11 @@
+reply-bots:
+  - name: ""
+    identity:
+      type: static
+      botName: SomeBot
+      avatarUrl: https://example.com/avatar.png
+    triggers:
+      - conditions:
+          always: true
+        responses:
+          - Hello

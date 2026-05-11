@@ -1,0 +1,12 @@
+reply-bots:
+  - name: hello-bot
+    identity:
+      type: static
+      botName: HelloBot
+      avatarUrl: https://example.com/hello.png
+    triggers:
+      - name: on-hello
+        conditions:
+          contains_word: hello
+        responses:
+          - Hello there!

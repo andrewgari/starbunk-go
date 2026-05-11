@@ -1,0 +1,9 @@
+reply-bots:
+  - name: bad-identity-bot
+    identity:
+      type: magic
+    triggers:
+      - conditions:
+          always: true
+        responses:
+          - Hello
