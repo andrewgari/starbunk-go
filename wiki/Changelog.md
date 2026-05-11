@@ -5,6 +5,13 @@ Add an entry under today's date for every PR or significant change.
 
 ---
 
+## 2026-05-11
+
+- Added `internal/middleware/trace.go`: `TraceAudit`, `AuditNode`, `AuditVerdict` (Passed/Failed/Ignored), `Named` wrapper, and `FormatTrace`. Produces a full auditor-tree trace with short-circuit visibility; zero impact on existing API or tests.
+- Added `internal/testenv` package: `FakeDiscordTransport` (mock HTTP RoundTripper), `NewFakeSession`, `NewMessage`/`With*` message builders, `BotHarness`, `ScenarioResult`, and `FormatScenarioFailure`. Enables full round-trip e2e tests with no network I/O.
+- Added `cmd/<bot>/bot_test.go` and `cmd/<bot>/e2e_test.go` for all 5 bots (35 Ginkgo specs total). Each spec table covers: auditor gate enforcement, handler invocation, and captured outbound message assertions. BunkBot/DJCova/RatBot additionally verify that bot-authors and DMs are intentionally allowed by their `AllOf(NotSelf, HasContent)` policy.
+- Updated `wiki/bots/*.md` with E2E Testing sections.
+
 ## 2026-05-09
 
 - Added `internal/middleware` package: composable `MessageAuditor` interface for mandatory message evaluation.

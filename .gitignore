@@ -3,6 +3,7 @@
 cmd/*/main
 cmd/*/*
 !cmd/*/*.md
+!cmd/*/*_test.go
 
 # Build output
 *.exe
