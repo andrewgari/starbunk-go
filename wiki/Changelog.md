@@ -5,6 +5,24 @@ Add an entry under today's date for every PR or significant change.
 
 ---
 
+## 2026-05-13
+
+- Implemented BlueBot strategy engine in `internal/bluebot/`.
+- New `Strategy` interface (`Name`, `ShouldTrigger`, `Response`) is the
+  extensibility seam — swap in an LLM or add stateful sub-strategies without
+  touching the dispatcher.
+- `BlueStrategy`: regex-based trigger covering `blue`, `blu+`, `bloo+`, `blew`,
+  `bleu`, `azul`, `blau`, `bluebot` (case-insensitive, word-bounded).
+  Response: `"Did somebody say Blu?"`.
+- `Bot` dispatcher: holds an ordered slice of strategies, first match wins.
+  Constructed once via `sync.Once` so future stateful strategies preserve
+  their state across calls.
+- `cmd/bluebot/main.go` updated — stub ping handler replaced with real engine.
+- 25 Ginkgo specs covering: matches, case-insensitivity, compound-word
+  exclusions (`bluetooth`, `blueprint`, `blueberry`), and the catchphrase.
+- Updated `wiki/bots/BlueBot.md` with architecture overview and extensibility
+  roadmap.
+
 ## 2026-05-09
 
 - Added `internal/middleware` package: composable `MessageAuditor` interface for mandatory message evaluation.
