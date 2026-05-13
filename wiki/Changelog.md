@@ -5,12 +5,36 @@ Add an entry under today's date for every PR or significant change.
 
 ---
 
+<<<<<<< test/e2e-bot-testing-pipeline
 ## 2026-05-11
 
 - Added `internal/middleware/trace.go`: `TraceAudit`, `AuditNode`, `AuditVerdict` (Passed/Failed/Ignored), `Named` wrapper, and `FormatTrace`. Produces a full auditor-tree trace with short-circuit visibility; zero impact on existing API or tests.
 - Added `internal/testenv` package: `FakeDiscordTransport` (mock HTTP RoundTripper), `NewFakeSession`, `NewMessage`/`With*` message builders, `BotHarness`, `ScenarioResult`, and `FormatScenarioFailure`. Enables full round-trip e2e tests with no network I/O.
 - Added `cmd/<bot>/bot_test.go` and `cmd/<bot>/e2e_test.go` for all 5 bots (35 Ginkgo specs total). Each spec table covers: auditor gate enforcement, handler invocation, and captured outbound message assertions. BunkBot/DJCova/RatBot additionally verify that bot-authors and DMs are intentionally allowed by their `AllOf(NotSelf, HasContent)` policy.
 - Updated `wiki/bots/*.md` with E2E Testing sections.
+=======
+## 2026-05-13
+
+- Implemented BlueBot strategy engine in `internal/bluebot/` and shared
+  dispatcher in `internal/replybot/`.
+- New `Strategy` interface (`Name`, `ShouldTrigger(ctx, msg)`, `Response(ctx, msg)`)
+  in `internal/replybot/` is the extensibility seam for all reply-style bots.
+  `ctx` is threaded through every call so LLM-backed strategies can respect
+  cancellation deadlines when that time comes.
+- `Bot` dispatcher in `internal/replybot/`: ordered strategies, first match
+  wins. `Handle(ctx, m)` — caller supplies the context, no hardcoded
+  `context.Background()` buried inside.
+- `BlueStrategy` in `internal/bluebot/`: regex covering `blue`, `blu+`,
+  `bloo+`, `blew`, `bleu`, `azul`, `blau`, `bluebot` (case-insensitive,
+  word-bounded). Response: `"Did somebody say Blu?"`. Gains compile-time
+  interface assertion `var _ replybot.Strategy = BlueStrategy{}`.
+- `cmd/bluebot/main.go`: stub replaced with real engine; `Bot` constructed
+  once via `sync.Once`; calls `blueBot.Handle(context.Background(), m)`.
+- 25 Ginkgo specs: matches, case variants, compound-word exclusions
+  (`bluetooth`, `blueprint`, `blueberry`), catchphrase.
+- Updated `wiki/bots/BlueBot.md` with architecture overview and extensibility
+  roadmap.
+>>>>>>> main
 
 ## 2026-05-09
 
