@@ -1,11 +1,14 @@
 package main
 
 import (
-	"log"
+	"context"
+	"sync"
 
+	"github.com/andrewgari/starbunk-go/internal/bluebot"
 	"github.com/andrewgari/starbunk-go/internal/bot"
 	"github.com/andrewgari/starbunk-go/internal/discord"
 	"github.com/andrewgari/starbunk-go/internal/middleware"
+	"github.com/andrewgari/starbunk-go/internal/replybot"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -16,16 +19,24 @@ var auditor = middleware.AllOf(
 	middleware.HasContent,
 )
 
+var (
+	blueBotOnce sync.Once
+	blueBot     *replybot.Bot
+)
+
 func main() {
 	bot.Run("BlueBot", auditor, messageCreate)
 }
 
+// messageCreate is the registered Discord event handler. The Bot is
+// constructed once on the first message so it can hold state across calls
+// (e.g. reply-window timers or an LLM client added in future).
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if m.Content == "ping bluebot" {
-		sender := discord.NewMessagingService(s)
-		_, err := sender.SendMessage(m.ChannelID, "Pong from bluebot!")
-		if err != nil {
-			log.Printf("failed to send message: %v\n", err)
-		}
-	}
+	blueBotOnce.Do(func() {
+		blueBot = replybot.NewBot(
+			discord.NewMessagingService(s),
+			bluebot.BlueStrategy{},
+		)
+	})
+	blueBot.Handle(context.Background(), m)
 }
