@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/andrewgari/starbunk-go/internal/bot"
 	"github.com/andrewgari/starbunk-go/internal/discord"
@@ -21,9 +21,8 @@ func main() {
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Content == "ping bunkbot" {
 		sender := discord.NewMessagingService(s)
-		_, err := sender.SendMessage(m.ChannelID, "Pong from bunkbot!")
-		if err != nil {
-			log.Printf("failed to send message: %v\n", err)
+		if _, err := sender.SendMessage(m.ChannelID, "Pong from bunkbot!"); err != nil {
+			slog.Error("failed to send message", "bot", "bunkbot", "err", err)
 		}
 	}
 }

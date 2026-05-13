@@ -52,10 +52,10 @@ for bot in "${BOTS[@]}"; do
   fi
 
   # 3. .github/workflows/ci.yml — build matrix
-  if grep -q "${bot}" .github/workflows/ci.yml 2>/dev/null; then
+  if grep -q "cmd/${bot}/" .github/workflows/ci.yml 2>/dev/null; then
     ok ".github/workflows/ci.yml: build matrix includes ${bot}"
   else
-    fail ".github/workflows/ci.yml: missing '${bot}' in build matrix"
+    fail ".github/workflows/ci.yml: missing 'cmd/${bot}/' in build matrix"
   fi
 
   # 4. .github/workflows/main.yml — paths-filter

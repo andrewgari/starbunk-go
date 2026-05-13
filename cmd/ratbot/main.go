@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/andrewgari/starbunk-go/internal/bot"
 	"github.com/andrewgari/starbunk-go/internal/discord"
@@ -23,7 +23,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		sender := discord.NewMessagingService(s)
 		_, err := sender.SendMessage(m.ChannelID, "Pong from ratbot!")
 		if err != nil {
-			log.Printf("failed to send message: %v\n", err)
+			slog.Error("failed to send message", "bot", "ratbot", "err", err)
 		}
 	}
 }

@@ -1,8 +1,7 @@
 package bot
 
 import (
-	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -22,12 +21,14 @@ import (
 func Run(botName string, auditor middleware.MessageAuditor, handlers ...any) {
 	token := os.Getenv("DISCORD_TOKEN")
 	if token == "" {
-		log.Fatal("DISCORD_TOKEN environment variable not set")
+		slog.Error("DISCORD_TOKEN environment variable not set", "bot", botName)
+		os.Exit(1)
 	}
 
 	dg, err := discordgo.New("Bot " + token)
 	if err != nil {
-		log.Fatalf("error creating Discord session for %s: %v", botName, err)
+		slog.Error("error creating Discord session", "bot", botName, "err", err)
+		os.Exit(1)
 	}
 
 	for _, h := range handlers {
@@ -42,16 +43,17 @@ func Run(botName string, auditor middleware.MessageAuditor, handlers ...any) {
 
 	err = dg.Open()
 	if err != nil {
-		log.Fatalf("error opening connection for %s: %v", botName, err)
+		slog.Error("error opening connection", "bot", botName, "err", err)
+		os.Exit(1)
 	}
 
-	fmt.Printf("%s is now running. Press CTRL-C to exit.\n", botName)
+	slog.Info("bot running, press CTRL-C to exit", "bot", botName)
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
 
 	if err := dg.Close(); err != nil {
-		log.Printf("error closing Discord session for %s: %v", botName, err)
+		slog.Error("error closing Discord session", "bot", botName, "err", err)
 	}
 }
 

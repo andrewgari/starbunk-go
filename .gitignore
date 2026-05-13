@@ -1,5 +1,10 @@
 # Binaries
 /bin/
+/bluebot
+/bunkbot
+/covabot
+/djcova
+/ratbot
 cmd/*/main
 cmd/*/*
 !cmd/*/*.md
