@@ -15,8 +15,9 @@ augmented (e.g. with an LLM) without restructuring the bot.
 
 ### Strategy pattern
 
-All detection and response logic lives in `internal/bluebot/`. The central
-abstraction is the `Strategy` interface:
+Bot-specific detection logic lives in `internal/bluebot/`. The shared
+dispatcher and interface live in `internal/replybot/` — every reply-style
+bot uses them. The central abstraction is the `Strategy` interface:
 
 ```go
 type Strategy interface {
@@ -67,10 +68,10 @@ Word boundaries (`\b`) prevent false positives on compound words like
 
 | File | Purpose |
 |---|---|
-| `cmd/bluebot/main.go` | Wires `bot.Run`, auditor, and `NewBot` |
-| `internal/bluebot/strategy.go` | `Strategy` interface |
+| `cmd/bluebot/main.go` | Wires `bot.Run`, auditor, and `replybot.NewBot` |
+| `internal/replybot/strategy.go` | `Strategy` interface (shared across all reply bots) |
+| `internal/replybot/bot.go` | `Bot` dispatcher (shared across all reply bots) |
 | `internal/bluebot/blue.go` | `BlueStrategy` — regex trigger + static response |
-| `internal/bluebot/bluebot.go` | `Bot` dispatcher |
 | `internal/bluebot/blue_test.go` | Ginkgo specs (25 cases) |
 
 ## Dependencies

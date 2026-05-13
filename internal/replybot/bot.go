@@ -1,4 +1,4 @@
-package bluebot
+package replybot
 
 import (
 	"context"
@@ -34,7 +34,7 @@ func (b *Bot) Handle(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if strategy.ShouldTrigger(ctx, m) {
 			resp := strategy.Response(ctx, m)
 			if _, err := b.sender.SendMessage(m.ChannelID, resp); err != nil {
-				log.Printf("[bluebot] %s: failed to send response: %v", strategy.Name(), err)
+				log.Printf("[replybot] %s: failed to send response: %v", strategy.Name(), err)
 			}
 			return
 		}

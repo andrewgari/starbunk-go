@@ -7,6 +7,7 @@ import (
 	"github.com/andrewgari/starbunk-go/internal/bot"
 	"github.com/andrewgari/starbunk-go/internal/discord"
 	"github.com/andrewgari/starbunk-go/internal/middleware"
+	"github.com/andrewgari/starbunk-go/internal/replybot"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -19,7 +20,7 @@ var auditor = middleware.AllOf(
 
 var (
 	blueBotOnce sync.Once
-	blueBot     *bluebot.Bot
+	blueBot     *replybot.Bot
 )
 
 func main() {
@@ -31,7 +32,7 @@ func main() {
 // (e.g. reply-window timers or an LLM client added in future).
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	blueBotOnce.Do(func() {
-		blueBot = bluebot.NewBot(
+		blueBot = replybot.NewBot(
 			discord.NewMessagingService(s),
 			bluebot.BlueStrategy{},
 		)
