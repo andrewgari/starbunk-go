@@ -7,27 +7,23 @@ Add an entry under today's date for every PR or significant change.
 
 ## 2026-05-13
 
-- Moved `Strategy` interface and `Bot` dispatcher from `internal/bluebot/` to
-  `internal/replybot/` — now shared across all reply-style bots.
-- `BlueStrategy` remains in `internal/bluebot/`; gains a compile-time assertion
-  (`var _ replybot.Strategy = BlueStrategy{}`) to catch interface drift.
-- `cmd/bluebot/main.go` updated to use `replybot.NewBot` and `replybot.Bot`.
-- `internal/replybot/` is now the home for the dispatcher and interface; each
-  bot's `cmd/<bot>/main.go` imports it alongside its own strategy package.
-
-- Implemented BlueBot strategy engine in `internal/bluebot/`.
-- New `Strategy` interface (`Name`, `ShouldTrigger`, `Response`) is the
-  extensibility seam — swap in an LLM or add stateful sub-strategies without
-  touching the dispatcher.
-- `BlueStrategy`: regex-based trigger covering `blue`, `blu+`, `bloo+`, `blew`,
-  `bleu`, `azul`, `blau`, `bluebot` (case-insensitive, word-bounded).
-  Response: `"Did somebody say Blu?"`.
-- `Bot` dispatcher: holds an ordered slice of strategies, first match wins.
-  Constructed once via `sync.Once` so future stateful strategies preserve
-  their state across calls.
-- `cmd/bluebot/main.go` updated — stub ping handler replaced with real engine.
-- 25 Ginkgo specs covering: matches, case-insensitivity, compound-word
-  exclusions (`bluetooth`, `blueprint`, `blueberry`), and the catchphrase.
+- Implemented BlueBot strategy engine in `internal/bluebot/` and shared
+  dispatcher in `internal/replybot/`.
+- New `Strategy` interface (`Name`, `ShouldTrigger(ctx, msg)`, `Response(ctx, msg)`)
+  in `internal/replybot/` is the extensibility seam for all reply-style bots.
+  `ctx` is threaded through every call so LLM-backed strategies can respect
+  cancellation deadlines when that time comes.
+- `Bot` dispatcher in `internal/replybot/`: ordered strategies, first match
+  wins. `Handle(ctx, m)` — caller supplies the context, no hardcoded
+  `context.Background()` buried inside.
+- `BlueStrategy` in `internal/bluebot/`: regex covering `blue`, `blu+`,
+  `bloo+`, `blew`, `bleu`, `azul`, `blau`, `bluebot` (case-insensitive,
+  word-bounded). Response: `"Did somebody say Blu?"`. Gains compile-time
+  interface assertion `var _ replybot.Strategy = BlueStrategy{}`.
+- `cmd/bluebot/main.go`: stub replaced with real engine; `Bot` constructed
+  once via `sync.Once`; calls `blueBot.Handle(context.Background(), m)`.
+- 25 Ginkgo specs: matches, case variants, compound-word exclusions
+  (`bluetooth`, `blueprint`, `blueberry`), catchphrase.
 - Updated `wiki/bots/BlueBot.md` with architecture overview and extensibility
   roadmap.
 

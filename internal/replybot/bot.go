@@ -26,10 +26,10 @@ func NewBot(sender discord.MessagingService, strategies ...Strategy) *Bot {
 	}
 }
 
-// Handle is the discordgo MessageCreate event handler. It runs each strategy
-// in order and sends the response for the first one that triggers.
-func (b *Bot) Handle(s *discordgo.Session, m *discordgo.MessageCreate) {
-	ctx := context.Background()
+// Handle runs each strategy in order and sends the response for the first one
+// that triggers. ctx is forwarded to every strategy call so that async
+// implementations (e.g. LLM providers) can respect cancellation and deadlines.
+func (b *Bot) Handle(ctx context.Context, m *discordgo.MessageCreate) {
 	for _, strategy := range b.strategies {
 		if strategy.ShouldTrigger(ctx, m) {
 			resp := strategy.Response(ctx, m)

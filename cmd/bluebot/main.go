@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"sync"
 
 	"github.com/andrewgari/starbunk-go/internal/bluebot"
@@ -37,5 +38,5 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			bluebot.BlueStrategy{},
 		)
 	})
-	blueBot.Handle(s, m)
+	blueBot.Handle(context.Background(), m)
 }
