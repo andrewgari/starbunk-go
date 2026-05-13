@@ -5,6 +5,19 @@ Add an entry under today's date for every PR or significant change.
 
 ---
 
+## 2026-05-13 (2)
+
+- Deleted `internal/config.go` and `internal/config_test.go` — dead scaffold
+  from project init (`package pkg`, `func HelloShared()`).
+- Added `/bluebot`, `/bunkbot`, `/covabot`, `/djcova`, `/ratbot` to
+  `.gitignore` so root-level built binaries are never accidentally staged.
+- Tightened `scripts/devops-validate.sh` ci.yml check: changed
+  `grep "${bot}"` to `grep "cmd/${bot}/"` so a bot name in a comment no
+  longer satisfies the check.
+- Migrated all logging from `log`/`fmt` to `log/slog` (stdlib, Go 1.21).
+  Every log call now emits structured fields: `bot=`, `strategy=`,
+  `channel=`, `err=`. No new dependencies.
+
 ## 2026-05-13
 
 - Implemented BlueBot strategy engine in `internal/bluebot/` and shared

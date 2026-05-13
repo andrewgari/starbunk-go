@@ -2,7 +2,7 @@ package replybot
 
 import (
 	"context"
-	"log"
+	"log/slog"
 
 	"github.com/andrewgari/starbunk-go/internal/discord"
 	"github.com/bwmarrin/discordgo"
@@ -34,7 +34,11 @@ func (b *Bot) Handle(ctx context.Context, m *discordgo.MessageCreate) {
 		if strategy.ShouldTrigger(ctx, m) {
 			resp := strategy.Response(ctx, m)
 			if _, err := b.sender.SendMessage(m.ChannelID, resp); err != nil {
-				log.Printf("[replybot] %s: failed to send response: %v", strategy.Name(), err)
+				slog.Error("replybot: failed to send response",
+					"strategy", strategy.Name(),
+					"channel", m.ChannelID,
+					"err", err,
+				)
 			}
 			return
 		}
