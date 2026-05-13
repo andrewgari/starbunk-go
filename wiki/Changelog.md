@@ -7,6 +7,14 @@ Add an entry under today's date for every PR or significant change.
 
 ## 2026-05-13
 
+- Moved `Strategy` interface and `Bot` dispatcher from `internal/bluebot/` to
+  `internal/replybot/` — now shared across all reply-style bots.
+- `BlueStrategy` remains in `internal/bluebot/`; gains a compile-time assertion
+  (`var _ replybot.Strategy = BlueStrategy{}`) to catch interface drift.
+- `cmd/bluebot/main.go` updated to use `replybot.NewBot` and `replybot.Bot`.
+- `internal/replybot/` is now the home for the dispatcher and interface; each
+  bot's `cmd/<bot>/main.go` imports it alongside its own strategy package.
+
 - Implemented BlueBot strategy engine in `internal/bluebot/`.
 - New `Strategy` interface (`Name`, `ShouldTrigger`, `Response`) is the
   extensibility seam — swap in an LLM or add stateful sub-strategies without
