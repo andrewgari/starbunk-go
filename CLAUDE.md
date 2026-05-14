@@ -13,7 +13,11 @@ the skill immediately — don't describe what you'd do, just do it.
 | Any coding, fixing, or refactoring task | `/task` |
 | Code has been written or changed | `/simplify` — review for quality and reuse |
 | Deploying or updating containers on Tower | `/deploy` |
+| PR is open — review comments to address | run `go test ./...` locally, then address each comment |
 | User asks about Claude Code / Anthropic API | `claude-code-guide` agent |
 | Setting up hooks or automated behaviors | `/update-config` |
+
+Before declaring any task done, run `go test ./...` locally. If tests fail,
+fixing them is part of the task.
 
 @AGENTS.md

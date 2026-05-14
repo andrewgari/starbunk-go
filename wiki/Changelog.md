@@ -5,6 +5,34 @@ Add an entry under today's date for every PR or significant change.
 
 ---
 
+## 2026-05-14 — Add self-correction protocol to AGENTS.md
+
+### Added
+- Self-Correction Protocol section in `AGENTS.md` with six recovery steps:
+  0. pre-edit sync/read/blast-radius check
+  1. post-change verification loop (`go build`, `go vet`, `go test`, per-bot build, `golangci-lint`)
+  2. error-reading discipline (no blind retries, no `//nolint` suppression)
+  3. DevOps drift check trigger rule
+  4. wiki/code consistency cross-reference table
+  5. CI failure recovery sequence
+  6. uncertainty protocol (build → wiki → git log → ask)
+
+---
+
+## 2026-05-14 — Port agentic guidance from starbunk-js
+
+### Added
+- CHANGELOG staging workflow (`wiki/raw/CHANGELOG-<branch>.md` pattern) in `AGENTS.md`.
+- Development Constraints section in `AGENTS.md`: no secret commits, container
+  isolation rules, self-message guard, non-blocking handler requirement.
+- "What counts as meaningful" definition for wiki update rule in `AGENTS.md`.
+- Pre-done checklist: `go test ./...` locally required before declaring tasks done.
+- BlueBot rate-limit specifics (5-min standard / 24-hour rare reply windows).
+- CovaBot 4-stage decision pipeline and social battery documented in `cmd/covabot/CLAUDE.md`.
+- LLM provider priority order (Ollama → Anthropic → Gemini → OpenAI) added to CovaBot docs.
+
+---
+
 ## 2026-05-14
 
 - Fixed critical bug in `.github/workflows/ci.yml`: `docker_test` job was
