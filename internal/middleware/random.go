@@ -21,4 +21,3 @@ type chanceAuditor struct {
 func (a chanceAuditor) Audit(_ *discordgo.Session, _ *discordgo.MessageCreate) bool {
 	return a.roll() < a.probability
 }
-
