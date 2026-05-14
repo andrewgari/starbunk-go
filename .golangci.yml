@@ -11,8 +11,6 @@ linters:
     - unused         # unused code
 
     # Style / readability
-    - gofmt          # formatting (no diff from gofmt)
-    - goimports      # import ordering
     - misspell       # common English misspellings in comments/strings
     - whitespace     # unnecessary blank lines
 
@@ -39,6 +37,12 @@ linters:
     rules:
       - path: "_test\\.go"
         linters: [errcheck, gosec]
+
+# gofmt and goimports are formatters in v2 — separate section from linters.
+formatters:
+  enable:
+    - gofmt
+    - goimports
 
 issues:
   max-issues-per-linter: 0
