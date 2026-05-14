@@ -1,0 +1,44 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    # Correctness
+    - govet          # go vet checks (shadow, structtag, etc.)
+    - errcheck       # unchecked errors
+    - staticcheck    # staticcheck suite (SA*, S1*, ST1*, QF*)
+    - ineffassign    # assignments whose value is never used
+    - unused         # unused code
+
+    # Style / readability
+    - gofmt          # formatting (no diff from gofmt)
+    - goimports      # import ordering
+    - misspell       # common English misspellings in comments/strings
+    - whitespace     # unnecessary blank lines
+
+    # Safety
+    - gosec          # common security issues (G1xx–G6xx)
+    - noctx          # HTTP requests without a context
+
+linters-settings:
+  errcheck:
+    # Ignore errors from fmt.Print* and common write helpers.
+    exclude-functions:
+      - fmt.Print
+      - fmt.Println
+      - fmt.Printf
+      - fmt.Fprintf
+      - (io.Writer).Write
+
+  gosec:
+    excludes:
+      - G304  # File path provided as taint input — acceptable for config reads
+      - G115  # integer overflow — too noisy for bot code
+
+issues:
+  # Keep CI output focused — suppress duplicate messages and test-file noise.
+  exclude-rules:
+    - path: "_test\\.go"
+      linters: [errcheck, gosec]
+  max-issues-per-linter: 0
+  max-same-issues: 0

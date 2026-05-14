@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
 
@@ -133,7 +132,11 @@ jobs:
       - name: Build ${{ matrix.bot }}
         run: go build -o /dev/null ./cmd/${{ matrix.bot }}
 
-  # ─── Docker build + container smoke test + GHCR publish (selective) ──────────
+  # ─── Docker build + container smoke test (PR only — no push) ────────────────
+  #
+  # Builds each changed bot's image locally and verifies it starts without a
+  # Go panic, runtime error, or exec-format failure.  Images are NOT pushed to
+  # GHCR here; publishing happens only after merge to main (main.yml).
   docker_test:
     name: Docker Test / ${{ matrix.bot }}
     runs-on: ubuntu-latest
@@ -149,65 +152,23 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Compute content hash
-        id: meta
-        run: |
-          BOT=${{ matrix.bot }}
-          SRC_HASH=$(git rev-parse HEAD:cmd/${BOT} 2>/dev/null || echo "no-hash")
-          INT_HASH=$(git rev-parse HEAD:internal 2>/dev/null || echo "no-internal")
-          MOD_HASH=$(sha256sum go.sum | cut -d' ' -f1 | head -c 12)
-          CONTENT_HASH="${SRC_HASH:0:12}-${INT_HASH:0:12}-${MOD_HASH}"
-          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          IMAGE="ghcr.io/${OWNER_LC}/starbunk-go-${BOT}"
-          echo "content_hash=${CONTENT_HASH}" >> $GITHUB_OUTPUT
-          echo "image=${IMAGE}" >> $GITHUB_OUTPUT
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Check if content-identical image already exists
-        id: cache_check
-        run: |
-          IMAGE="${{ steps.meta.outputs.image }}"
-          HASH="${{ steps.meta.outputs.content_hash }}"
-          if docker manifest inspect "${IMAGE}:sha-${HASH}" > /dev/null 2>&1; then
-            echo "hit=true" >> $GITHUB_OUTPUT
-            echo "Content-identical image already in GHCR: ${IMAGE}:sha-${HASH}"
-          else
-            echo "hit=false" >> $GITHUB_OUTPUT
-            echo "No cached image found for hash ${HASH}. Build required."
-          fi
-
       - name: Build Docker image
-        if: steps.cache_check.outputs.hit == 'false'
         run: |
           docker build \
             -f docker/Dockerfile \
             --build-arg BOT_NAME="${{ matrix.bot }}" \
-            -t "${{ steps.meta.outputs.image }}:ci-test" \
+            -t "starbunk-go-${{ matrix.bot }}:ci-test" \
             .
-
-      - name: Pull cached image for smoke test
-        if: steps.cache_check.outputs.hit == 'true'
-        run: |
-          IMAGE="${{ steps.meta.outputs.image }}"
-          HASH="${{ steps.meta.outputs.content_hash }}"
-          docker pull "${IMAGE}:sha-${HASH}"
-          docker tag "${IMAGE}:sha-${HASH}" "${IMAGE}:ci-test"
 
       - name: Smoke test — container starts without crashing
         run: |
-          IMAGE="${{ steps.meta.outputs.image }}"
           BOT="${{ matrix.bot }}"
+          IMAGE="starbunk-go-${BOT}:ci-test"
           echo "Running smoke test for ${BOT}..."
 
           OUTPUT=$(timeout 10 docker run --rm \
             -e DISCORD_TOKEN=invalid_ci_test_token \
-            "${IMAGE}:ci-test" 2>&1) || true
+            "${IMAGE}" 2>&1) || true
 
           echo "=== Container output ==="
           echo "$OUTPUT"
@@ -238,14 +199,3 @@ jobs:
           fi
 
           echo "OK: Smoke test passed for ${BOT}"
-
-      - name: Push new image and tag as latest
-        if: steps.cache_check.outputs.hit == 'false'
-        run: |
-          IMAGE="${{ steps.meta.outputs.image }}"
-          HASH="${{ steps.meta.outputs.content_hash }}"
-          docker tag "${IMAGE}:ci-test" "${IMAGE}:sha-${HASH}"
-          docker push "${IMAGE}:sha-${HASH}"
-          docker tag "${IMAGE}:ci-test" "${IMAGE}:latest"
-          docker push "${IMAGE}:latest"
-          echo "Published ${IMAGE}:latest (sha-${HASH})"
