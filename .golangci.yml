@@ -20,25 +20,25 @@ linters:
     - gosec          # common security issues (G1xx–G6xx)
     - noctx          # HTTP requests without a context
 
-linters-settings:
-  errcheck:
-    # Ignore errors from fmt.Print* and common write helpers.
-    exclude-functions:
-      - fmt.Print
-      - fmt.Println
-      - fmt.Printf
-      - fmt.Fprintf
-      - (io.Writer).Write
+  settings:
+    errcheck:
+      # Ignore errors from fmt.Print* and common write helpers.
+      exclude-functions:
+        - fmt.Print
+        - fmt.Println
+        - fmt.Printf
+        - fmt.Fprintf
+        - (io.Writer).Write
 
-  gosec:
-    excludes:
-      - G304  # File path provided as taint input — acceptable for config reads
-      - G115  # integer overflow — too noisy for bot code
+    gosec:
+      excludes:
+        - G304  # File path provided as taint input — acceptable for config reads
+        - G115  # integer overflow — too noisy for bot code
 
 issues:
-  # Keep CI output focused — suppress duplicate messages and test-file noise.
-  exclude-rules:
-    - path: "_test\\.go"
-      linters: [errcheck, gosec]
+  exclusions:
+    rules:
+      - path: "_test\\.go"
+        linters: [errcheck, gosec]
   max-issues-per-linter: 0
   max-same-issues: 0
