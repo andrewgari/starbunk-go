@@ -35,10 +35,11 @@ linters:
         - G304  # File path provided as taint input — acceptable for config reads
         - G115  # integer overflow — too noisy for bot code
 
-issues:
   exclusions:
     rules:
       - path: "_test\\.go"
         linters: [errcheck, gosec]
+
+issues:
   max-issues-per-linter: 0
   max-same-issues: 0
