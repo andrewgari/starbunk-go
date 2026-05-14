@@ -320,8 +320,8 @@ var _ = Describe("complex compositions", func() {
 		jeffBotOnMonday := build(isBot(), authorName("Jeff"), sentOn(time.Monday))
 		humanJeffOnFriday := build(authorName("Jeff"), sentOn(time.Friday))
 
-		Expect(rejectJeffOnWeekends.Audit(s, jeffBotOnFriday)).To(BeFalse()) // blocked
-		Expect(rejectJeffOnWeekends.Audit(s, jeffBotOnMonday)).To(BeTrue())  // Jeff, but safe day
+		Expect(rejectJeffOnWeekends.Audit(s, jeffBotOnFriday)).To(BeFalse())  // blocked
+		Expect(rejectJeffOnWeekends.Audit(s, jeffBotOnMonday)).To(BeTrue())   // Jeff, but safe day
 		Expect(rejectJeffOnWeekends.Audit(s, humanJeffOnFriday)).To(BeTrue()) // human Jeff, passes
 	})
 
@@ -334,10 +334,10 @@ var _ = Describe("complex compositions", func() {
 		)
 
 		Expect(bluebotAuditor.Audit(s, build(authorID("u"), guildID("g"), content("hello")))).To(BeTrue())
-		Expect(bluebotAuditor.Audit(s, build(authorID("bot-id"), guildID("g"), content("hello")))).To(BeFalse()) // self
+		Expect(bluebotAuditor.Audit(s, build(authorID("bot-id"), guildID("g"), content("hello")))).To(BeFalse())  // self
 		Expect(bluebotAuditor.Audit(s, build(authorID("u"), isBot(), guildID("g"), content("hi")))).To(BeFalse()) // bot author
-		Expect(bluebotAuditor.Audit(s, build(authorID("u"), content("hello")))).To(BeFalse())                    // DM
-		Expect(bluebotAuditor.Audit(s, build(authorID("u"), guildID("g"), content("")))).To(BeFalse())           // empty
+		Expect(bluebotAuditor.Audit(s, build(authorID("u"), content("hello")))).To(BeFalse())                     // DM
+		Expect(bluebotAuditor.Audit(s, build(authorID("u"), guildID("g"), content("")))).To(BeFalse())            // empty
 	})
 
 	It("BunkBot policy: passes non-self guild messages with content, including from bots", func() {

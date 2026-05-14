@@ -5,6 +5,19 @@ Add an entry under today's date for every PR or significant change.
 
 ---
 
+## 2026-05-14
+
+- Fixed critical bug in `.github/workflows/ci.yml`: `docker_test` job was
+  pushing `:latest` and `sha-{hash}` images to GHCR on every PR, overwriting
+  the production tag. CI now builds and smoke-tests Docker images locally only;
+  GHCR publishing happens exclusively in `main.yml` after merge.
+- Removed `packages: write` permission from `ci.yml` (PRs never need to write
+  to GHCR).
+- Added `.golangci.yml` with an explicit linter set (`govet`, `errcheck`,
+  `staticcheck`, `ineffassign`, `unused`, `gofmt`, `goimports`, `misspell`,
+  `whitespace`, `gosec`, `noctx`) so linter behaviour is pinned and
+  reproducible across golangci-lint versions.
+
 ## 2026-05-13 (2)
 
 - Deleted `internal/config.go` and `internal/config_test.go` — dead scaffold
