@@ -1,0 +1,222 @@
+name: Release / Tag Push
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'   # pre-releases: v1.3.0-rc.1
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+
+  # ─── Validate the tag before doing any real work ─────────────────────────────
+  validate_tag:
+    name: Validate Release Tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: extract
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Releasing version: ${VERSION}"
+
+      - name: Verify tag points to a commit on main
+        run: |
+          git fetch origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not point to a commit reachable from main."
+            echo "::error::Only commits on main may be released."
+            exit 1
+          fi
+
+      - name: Verify release does not already exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          if gh release view "$VERSION" > /dev/null 2>&1; then
+            echo "::error::GitHub Release for ${VERSION} already exists."
+            echo "::error::Delete the existing release before re-releasing this tag."
+            exit 1
+          fi
+
+  # ─── Lint ─────────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    needs: validate_tag
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false  # golangci-lint manages its own cache
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.12.2
+
+  # ─── Test ─────────────────────────────────────────────────────────────────────
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: [validate_tag, lint]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Run tests
+        run: go test ./... -v
+
+  # ─── Build and push versioned Docker images (all bots) ───────────────────────
+  #
+  # Always rebuilds all bots for a coherent release set. Content-hash
+  # deduplication avoids a full Docker build if the image is already in GHCR.
+  docker_release:
+    name: Docker Release / ${{ matrix.bot }}
+    runs-on: ubuntu-latest
+    needs: [validate_tag, lint, test]
+    strategy:
+      fail-fast: false
+      matrix:
+        bot: [bluebot, bunkbot, covabot, djcova, ratbot]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute content hash
+        run: |
+          BOT=${{ matrix.bot }}
+          SRC_HASH=$(git rev-parse HEAD:cmd/${BOT} 2>/dev/null || echo "no-hash")
+          INT_HASH=$(git rev-parse HEAD:internal 2>/dev/null || echo "no-internal")
+          MOD_HASH=$(sha256sum go.sum | cut -d' ' -f1 | head -c 12)
+          echo "CONTENT_HASH=${SRC_HASH:0:12}-${INT_HASH:0:12}-${MOD_HASH}" >> $GITHUB_ENV
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push release image
+        run: |
+          BOT=${{ matrix.bot }}
+          VERSION=${{ needs.validate_tag.outputs.version }}
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE="ghcr.io/${OWNER_LC}/starbunk-go-${BOT}"
+
+          if docker manifest inspect "${IMAGE}:sha-${CONTENT_HASH}" > /dev/null 2>&1; then
+            echo "Reusing existing image (${CONTENT_HASH}) — retagging."
+            docker pull "${IMAGE}:sha-${CONTENT_HASH}"
+            docker tag "${IMAGE}:sha-${CONTENT_HASH}" "${IMAGE}:${VERSION}"
+            docker tag "${IMAGE}:sha-${CONTENT_HASH}" "${IMAGE}:latest"
+          else
+            echo "Building ${IMAGE}:${VERSION}"
+            docker build \
+              -f docker/Dockerfile \
+              --build-arg BOT_NAME="${BOT}" \
+              -t "${IMAGE}:${VERSION}" \
+              -t "${IMAGE}:latest" \
+              -t "${IMAGE}:sha-${CONTENT_HASH}" \
+              .
+            docker push "${IMAGE}:sha-${CONTENT_HASH}"
+          fi
+
+          docker push "${IMAGE}:${VERSION}"
+          docker push "${IMAGE}:latest"
+          echo "Published ${IMAGE}:${VERSION} and ${IMAGE}:latest"
+
+  # ─── Create GitHub Release ────────────────────────────────────────────────────
+  #
+  # Creates the GitHub Release from the developer-pushed tag. This event
+  # triggers deploy.yml automatically via `release: types: [published]`.
+  publish_release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    needs: [validate_tag, docker_release]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          VERSION="${{ needs.validate_tag.outputs.version }}"
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+
+          # Find the previous semver tag for changelog range.
+          PREV_TAG=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' \
+            | grep -vE -- '-' \
+            | grep -v "^${VERSION}$" \
+            | sort -V | tail -1 || true)
+
+          if [ -n "$PREV_TAG" ]; then
+            CHANGES=$(git log --oneline "${PREV_TAG}..HEAD" \
+              | grep -v 'Merge pull request' \
+              | head -30 \
+              | sed 's/^/- /' || true)
+            RANGE="${PREV_TAG}..${VERSION}"
+          else
+            CHANGES="- Initial release"
+            RANGE="${VERSION}"
+          fi
+
+          {
+            echo "NOTES<<RELEASE_EOF"
+            echo "## Docker Images"
+            echo ""
+            for bot in bluebot bunkbot covabot djcova ratbot; do
+              echo "- \`ghcr.io/${OWNER_LC}/starbunk-go-${bot}:${VERSION}\`"
+            done
+            echo ""
+            echo "## Changes (${RANGE})"
+            echo ""
+            echo "${CHANGES}"
+            echo "RELEASE_EOF"
+          } >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ needs.validate_tag.outputs.version }}"
+
+          # Use --prerelease for versions with a pre-release identifier (e.g. v1.3.0-rc.1).
+          if [[ "$VERSION" == *"-"* ]]; then
+            RELEASE_FLAGS="--prerelease"
+          else
+            RELEASE_FLAGS="--latest"
+          fi
+
+          gh release create "$VERSION" \
+            --title "$VERSION" \
+            --notes "${{ steps.notes.outputs.NOTES }}" \
+            $RELEASE_FLAGS
+
+          echo "Created release: ${VERSION}"

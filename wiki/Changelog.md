@@ -5,6 +5,19 @@ Add an entry under today's date for every PR or significant change.
 
 ---
 
+## 2026-05-15 (3)
+
+- **Tag-based release system**: replaced automatic semver-from-PR-labels with
+  an explicit `git tag v1.3.0 && git push origin v1.3.0` release flow.
+  - New `release.yml` workflow: triggers on `v*` tag push, validates the tag
+    is on `main`, runs lint+test, builds all 5 bot images tagged `:vX.Y.Z` +
+    `:latest`, creates GitHub Release (which triggers Tower deploy).
+  - Simplified `main.yml`: removed `semver_tag`, `publish_release`, and
+    `versioned_bots` logic. Now only publishes `:main`/`:sha-*` images and
+    creates `build-YYYYMMDD-sha` breadcrumb tags on merge.
+  - `:latest` is now exclusively owned by `release.yml` — Tower always runs a
+    named, intentional release.
+
 ## 2026-05-15 (2)
 
 - Migrated `internal/bluebot/` into `cmd/bluebot/` — `BlueStrategy` and its
