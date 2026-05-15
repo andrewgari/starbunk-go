@@ -110,16 +110,16 @@ var _ = Describe("Bot.Handle", func() {
 
 	Context("unconditioned strategies", func() {
 		It("calls ShouldTrigger on an unconditioned strategy for every message", func() {
-			strat := &stubStrategy{name: "s", triggerResult: false}
-			bot := replybot.NewBot(sender, strat)
+			s1 := &stubStrategy{name: "s", triggerResult: false}
+			bot := replybot.NewBot(sender, s1)
 
 			bot.Handle(context.Background(), sess, build(authorID("u"), inGuild("g")))
-			Expect(strat.triggerCalls).To(Equal(1))
+			Expect(s1.triggerCalls).To(Equal(1))
 		})
 
 		It("sends the response of the first triggering strategy", func() {
-			strat := &stubStrategy{name: "s", triggerResult: true, response: "pong"}
-			bot := replybot.NewBot(sender, strat)
+			s1 := &stubStrategy{name: "s", triggerResult: true, response: "pong"}
+			bot := replybot.NewBot(sender, s1)
 
 			bot.Handle(context.Background(), sess, build(authorID("u"), withContent("ping"), inGuild("g")))
 			Expect(sender.lastContent).To(Equal("pong"))
@@ -138,22 +138,22 @@ var _ = Describe("Bot.Handle", func() {
 
 	Context("ConditionedStrategy via WithCondition", func() {
 		It("skips ShouldTrigger when the condition fails", func() {
-			strat := &stubStrategy{name: "bot-only", triggerResult: true}
-			bot := replybot.NewBot(sender, replybot.WithCondition(middleware.IsBot, strat))
+			s1 := &stubStrategy{name: "bot-only", triggerResult: true}
+			bot := replybot.NewBot(sender, replybot.WithCondition(middleware.IsBot, s1))
 
 			// Human message — IsBot condition fails → ShouldTrigger must not be called
 			bot.Handle(context.Background(), sess, build(authorID("u")))
-			Expect(strat.triggerCalls).To(Equal(0))
+			Expect(s1.triggerCalls).To(Equal(0))
 			Expect(sender.callCount).To(Equal(0))
 		})
 
 		It("calls ShouldTrigger when the condition passes", func() {
-			strat := &stubStrategy{name: "bot-only", triggerResult: true, response: "hello bot"}
-			bot := replybot.NewBot(sender, replybot.WithCondition(middleware.IsBot, strat))
+			s1 := &stubStrategy{name: "bot-only", triggerResult: true, response: "hello bot"}
+			bot := replybot.NewBot(sender, replybot.WithCondition(middleware.IsBot, s1))
 
 			// Bot message — IsBot condition passes
 			bot.Handle(context.Background(), sess, build(authorID("other-bot"), isBot()))
-			Expect(strat.triggerCalls).To(Equal(1))
+			Expect(s1.triggerCalls).To(Equal(1))
 			Expect(sender.lastContent).To(Equal("hello bot"))
 		})
 
@@ -198,33 +198,33 @@ var _ = Describe("Bot.Handle", func() {
 		})
 
 		It("uses AllOf conditions for multi-criteria filtering", func() {
-			strat := &stubStrategy{name: "bot-guild", triggerResult: true, response: "ok"}
+			s1 := &stubStrategy{name: "bot-guild", triggerResult: true, response: "ok"}
 			cond := middleware.AllOf(middleware.IsBot, middleware.GuildOnly)
-			bot := replybot.NewBot(sender, replybot.WithCondition(cond, strat))
+			bot := replybot.NewBot(sender, replybot.WithCondition(cond, s1))
 
 			// Bot in DM → condition fails (not GuildOnly)
 			bot.Handle(context.Background(), sess, build(isBot()))
-			Expect(strat.triggerCalls).To(Equal(0))
+			Expect(s1.triggerCalls).To(Equal(0))
 
 			// Bot in guild → condition passes
 			bot.Handle(context.Background(), sess, build(isBot(), inGuild("g")))
-			Expect(strat.triggerCalls).To(Equal(1))
+			Expect(s1.triggerCalls).To(Equal(1))
 			Expect(sender.lastContent).To(Equal("ok"))
 		})
 	})
 
 	Context("NotSelf via bot-level auditor (tier-1 integration)", func() {
 		It("NotSelf condition skips messages from the bot itself", func() {
-			strat := &stubStrategy{name: "self-check", triggerResult: true, response: "oops"}
-			bot := replybot.NewBot(sender, replybot.WithCondition(middleware.NotSelf, strat))
+			s1 := &stubStrategy{name: "self-check", triggerResult: true, response: "oops"}
+			bot := replybot.NewBot(sender, replybot.WithCondition(middleware.NotSelf, s1))
 
 			// Self message → condition fails
 			bot.Handle(context.Background(), sess, build(authorID("bot-id")))
-			Expect(strat.triggerCalls).To(Equal(0))
+			Expect(s1.triggerCalls).To(Equal(0))
 
 			// Other user → condition passes
 			bot.Handle(context.Background(), sess, build(authorID("other-user")))
-			Expect(strat.triggerCalls).To(Equal(1))
+			Expect(s1.triggerCalls).To(Equal(1))
 		})
 	})
 })
