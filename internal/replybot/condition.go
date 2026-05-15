@@ -27,7 +27,7 @@ type conditionedStrategy struct {
 	inner Strategy
 }
 
-func (c conditionedStrategy) Name() string { return c.inner.Name() }
+func (c conditionedStrategy) Name() string                         { return c.inner.Name() }
 func (c conditionedStrategy) Condition() middleware.MessageAuditor { return c.cond }
 
 func (c conditionedStrategy) ShouldTrigger(ctx context.Context, msg *discordgo.MessageCreate) bool {

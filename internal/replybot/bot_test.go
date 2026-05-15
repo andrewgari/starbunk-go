@@ -80,10 +80,10 @@ var _ discord.MessagingService = (*stubSender)(nil)
 
 // stubStrategy records calls and returns a configurable trigger result.
 type stubStrategy struct {
-	name        string
+	name          string
 	triggerResult bool
-	response    string
-	triggerCalls int
+	response      string
+	triggerCalls  int
 }
 
 func (s *stubStrategy) Name() string { return s.name }
