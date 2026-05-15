@@ -38,5 +38,5 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			bluebot.BlueStrategy{},
 		)
 	})
-	blueBot.Handle(context.Background(), m)
+	blueBot.Handle(context.Background(), s, m)
 }
