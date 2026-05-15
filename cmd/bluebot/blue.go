@@ -1,6 +1,4 @@
-// Package bluebot implements BlueBot's detection strategies.
-// The shared Strategy interface and Bot dispatcher live in internal/replybot.
-package bluebot
+package main
 
 import (
 	"context"
@@ -18,10 +16,6 @@ var _ replybot.Strategy = BlueStrategy{}
 //
 // Word boundaries (\b) prevent false positives on compound words like
 // "bluetooth", "blueprint", or "blueberry".
-//
-// To add a new variant, append it to the alternation. To upgrade to an LLM
-// trigger, implement replybot.Strategy and pass it to replybot.NewBot alongside
-// (or instead of) this one — the dispatcher is unchanged.
 var bluePattern = regexp.MustCompile(`(?i)\b(bluebot|bloo+|bleu|blew|azul|blau|blu+|blue?)\b`)
 
 // BlueStrategy triggers on any message that contains a recognisable reference
