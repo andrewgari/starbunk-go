@@ -5,6 +5,12 @@ Add an entry under today's date for every PR or significant change.
 
 ---
 
+## 2026-05-15 (2)
+
+- Migrated `internal/bluebot/` into `cmd/bluebot/` — `BlueStrategy` and its
+  Ginkgo test suite now live alongside `main.go` as `package main`.
+  The `internal/bluebot` package is deleted; no other packages are affected.
+
 ## 2026-05-15
 
 - Added two-tier condition system to `internal/replybot`:

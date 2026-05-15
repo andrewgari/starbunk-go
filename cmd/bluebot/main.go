@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/andrewgari/starbunk-go/internal/bluebot"
 	"github.com/andrewgari/starbunk-go/internal/bot"
 	"github.com/andrewgari/starbunk-go/internal/discord"
 	"github.com/andrewgari/starbunk-go/internal/middleware"
@@ -35,7 +34,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	blueBotOnce.Do(func() {
 		blueBot = replybot.NewBot(
 			discord.NewMessagingService(s),
-			bluebot.BlueStrategy{},
+			BlueStrategy{},
 		)
 	})
 	blueBot.Handle(context.Background(), s, m)
