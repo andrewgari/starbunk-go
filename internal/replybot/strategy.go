@@ -14,6 +14,7 @@ package replybot
 import (
 	"context"
 
+	"github.com/andrewgari/starbunk-go/internal/middleware"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -34,4 +35,16 @@ type Strategy interface {
 	// Response returns the text to send. Only called after ShouldTrigger
 	// returns true, so implementations may assume the message matched.
 	Response(ctx context.Context, msg *discordgo.MessageCreate) string
+}
+
+// ConditionedStrategy is an optional extension of Strategy. When a strategy
+// implements this interface, Bot.Handle evaluates the condition before calling
+// ShouldTrigger. Messages that fail the condition are silently skipped for
+// this strategy; the remaining strategies continue to be evaluated.
+//
+// Use WithCondition to compose any existing Strategy with a condition without
+// modifying the strategy struct itself.
+type ConditionedStrategy interface {
+	Strategy
+	Condition() middleware.MessageAuditor
 }

@@ -5,6 +5,18 @@ Add an entry under today's date for every PR or significant change.
 
 ---
 
+## 2026-05-15
+
+- Added two-tier condition system to `internal/replybot`:
+  - **Tier 1** (unchanged): bot-level `MessageAuditor` in `bot.Run()` — hard gates like `NotSelf`.
+  - **Tier 2** (new): strategy-level conditions via the optional `ConditionedStrategy` interface
+    and the `WithCondition(cond, strategy)` compose helper in `replybot/condition.go`.
+  - `Bot.Handle()` now accepts `*discordgo.Session` so strategy conditions (e.g. `AuthorHasRole`)
+    can inspect guild state.
+  - Enables BunkBot to host mixed strategies: `WithCondition(middleware.IsBot, botBotStrategy)`
+    alongside `WithCondition(middleware.NotBot, humanOnlyStrategy)`.
+  - Added Ginkgo test suite `internal/replybot/bot_test.go` covering all dispatch cases.
+
 ## 2026-05-14
 
 - Fixed critical bug in `.github/workflows/ci.yml`: `docker_test` job was
