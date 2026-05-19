@@ -21,6 +21,11 @@ character-themed response. Ported from starbunk-js BlueBot.
 
 ## Edge Cases
 
-- Keep regex patterns simple and bounded to avoid ReDoS.
-- Rate-limit replies — do not spam the channel on a burst of matching messages.
-- Distinguish colloquial "blue" from intentional Blue Mage references.
+- Keep regex patterns simple and bounded to avoid ReDoS (Regex Denial of
+  Service). Never use unbounded quantifiers on large character classes.
+- **Rate-limit replies** — use separate windows per reply type:
+  - Standard pattern matches: ~5-minute cooldown per channel.
+  - Rare / enemy-themed responses: ~24-hour cooldown per channel.
+- Distinguish colloquial "blue" (e.g. colour, mood) from intentional Blue Mage
+  references. Optional LLM validation can reduce false positives once wired.
+- Avoid triggering on messages sent by other bots (check `m.Author.Bot`).
