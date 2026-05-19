@@ -27,6 +27,22 @@ identities using `internal/discord.MessagingService`.
 - Race conditions on simultaneous admin commands.
 - Graceful degradation when Discord API is unreachable.
 
+## E2E Testing
+
+Tests live in `cmd/bunkbot/e2e_test.go` (`package main`), run via `go test ./cmd/bunkbot/...`.
+
+**Auditor policy under test:** `AllOf(NotSelf, HasContent)`
+
+| Scenario | Expected |
+|---|---|
+| Human guild message with content | Audit passes |
+| Self message | Blocked by `NotSelf` |
+| Empty content | Blocked by `HasContent` |
+| Bot author (intentional) | Audit passes — BunkBot allows bot-authored messages |
+| DM (intentional) | Audit passes — BunkBot allows DMs |
+| `"ping bunkbot"` | Audit passes, sends `"Pong from bunkbot!"` |
+| Unrecognised content | Audit passes, no reply |
+
 ## See Also
 
 - `cmd/bunkbot/CLAUDE.md`

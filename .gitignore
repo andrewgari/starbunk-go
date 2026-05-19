@@ -8,6 +8,7 @@
 cmd/*/main
 cmd/*/*
 !cmd/*/*.md
+!cmd/*/*_test.go
 !cmd/*/*.go
 
 # Build output

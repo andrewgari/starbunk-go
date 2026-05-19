@@ -28,6 +28,22 @@ from starbunk-js DJCova.
 - YouTube playback errors or geo-restricted videos.
 - Proper cleanup of ffmpeg processes on disconnect or crash.
 
+## E2E Testing
+
+Tests live in `cmd/djcova/e2e_test.go` (`package main`), run via `go test ./cmd/djcova/...`.
+
+**Auditor policy under test:** `AllOf(NotSelf, HasContent)`
+
+| Scenario | Expected |
+|---|---|
+| Human guild message with content | Audit passes |
+| Self message | Blocked by `NotSelf` |
+| Empty content | Blocked by `HasContent` |
+| Bot author (intentional) | Audit passes — DJCova allows bot-authored messages |
+| DM (intentional) | Audit passes — DJCova allows DMs |
+| `"ping djcova"` | Audit passes, sends `"Pong from djcova!"` |
+| Unrecognised content | Audit passes, no reply |
+
 ## See Also
 
 - `cmd/djcova/CLAUDE.md`

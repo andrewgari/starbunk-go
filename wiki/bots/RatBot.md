@@ -34,6 +34,22 @@ the Ratmas Secret Santa exchange with maximum rat energy.
 - Duplicate sign-ups from the same user must be deduplicated.
 - Sign-up and admin commands should be gated to appropriate roles/channels.
 
+## E2E Testing
+
+Tests live in `cmd/ratbot/e2e_test.go` (`package main`), run via `go test ./cmd/ratbot/...`.
+
+**Auditor policy under test:** `AllOf(NotSelf, HasContent)`
+
+| Scenario | Expected |
+|---|---|
+| Human guild message with content | Audit passes |
+| Self message | Blocked by `NotSelf` |
+| Empty content | Blocked by `HasContent` |
+| Bot author (intentional) | Audit passes — RatBot allows bot-authored messages |
+| DM (intentional) | Audit passes — RatBot allows DMs (needed for Secret Santa assignments) |
+| `"ping ratbot"` | Audit passes, sends `"Pong from ratbot!"` |
+| Unrecognised content | Audit passes, no reply |
+
 ## See Also
 
 - `cmd/ratbot/CLAUDE.md`
