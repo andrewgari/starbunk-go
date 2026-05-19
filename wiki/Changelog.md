@@ -5,6 +5,18 @@ Add an entry under today's date for every PR or significant change.
 
 ---
 
+## 2026-05-19
+
+- **Compose/deploy audit guidance added to AGENTS.md**: added "Image tag chain
+  audit" checklist to the DevOps maintenance section, requiring agents to
+  verify workflow image names, tag variables, and pre-release behaviour when
+  editing CI/CD workflows.
+- **Fixed wiki inaccuracy** in `wiki/Versioning.md`: pre-release deploys do
+  _not_ pull the RC image tag — Tower continues running `:latest`. Corrected
+  the description and documented the manual override process.
+
+---
+
 ## 2026-05-15 (3)
 
 - **Tag-based release system**: replaced automatic semver-from-PR-labels with

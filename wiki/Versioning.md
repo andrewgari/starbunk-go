@@ -48,8 +48,11 @@ git push origin v1.3.0-rc.1
 
 - Images are tagged `:v1.3.0-rc.1` but **not** `:latest`.
 - The GitHub Release is marked `--prerelease`.
-- `deploy.yml` still fires (Tower pulls `:v1.3.0-rc.1`); add an environment
-  protection rule in `deploy.yml` if you want manual approval for RCs.
+- `deploy.yml` still fires (a pre-release event is still `published`), but
+  `deploy.yml` passes `latest` as the image tag, so **Tower continues running
+  the previous stable `:latest` image** — it does _not_ pull `:v1.3.0-rc.1`.
+  To test an RC on Tower you must set `IMAGE_TAG=v1.3.0-rc.1` in `stack.env`
+  and restart services manually.
 
 ---
 
