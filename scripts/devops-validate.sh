@@ -58,11 +58,11 @@ for bot in "${BOTS[@]}"; do
     fail ".github/workflows/ci.yml: missing 'cmd/${bot}/' in build matrix"
   fi
 
-  # 4. .github/workflows/main.yml — paths-filter
-  if grep -q "cmd/${bot}" .github/workflows/main.yml 2>/dev/null; then
-    ok ".github/workflows/main.yml: paths-filter includes cmd/${bot}"
+  # 4. .github/workflows/main.yml — docker build matrix
+  if grep -q "${bot}" .github/workflows/main.yml 2>/dev/null; then
+    ok ".github/workflows/main.yml: docker matrix includes ${bot}"
   else
-    fail ".github/workflows/main.yml: missing 'cmd/${bot}' in paths-filter"
+    fail ".github/workflows/main.yml: missing '${bot}' in docker build matrix"
   fi
 
   # 5. scripts/deployment/health-check.sh — EXPECTED_SERVICES

@@ -1,11 +1,10 @@
-package bluebot_test
+package main
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/andrewgari/starbunk-go/internal/bluebot"
 	"github.com/bwmarrin/discordgo"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -28,7 +27,7 @@ func msg(content string) *discordgo.MessageCreate {
 
 var _ = Describe("BlueStrategy", func() {
 	var (
-		s   bluebot.BlueStrategy
+		s   BlueStrategy
 		ctx = context.Background()
 	)
 

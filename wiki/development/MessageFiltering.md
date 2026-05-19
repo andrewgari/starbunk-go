@@ -345,6 +345,73 @@ Auditor compositions (the per-bot policy) live in each `cmd/<bot>/main.go`, not 
 
 ---
 
+---
+
+## Tier 2: Strategy-Level Conditions (`internal/replybot`)
+
+For bots that use the `replybot.Bot` dispatcher (e.g. BlueBot, and eventually BunkBot), a second
+tier of filtering exists at the **individual strategy level**. This is necessary when different
+strategies within the same bot need conflicting filter policies — for example, a "BotBot" strategy
+that responds only to bots, alongside human-only strategies.
+
+### How it works
+
+`Bot.Handle()` checks whether a strategy implements the optional `ConditionedStrategy` interface
+before calling `ShouldTrigger`. If the condition fails, the message is silently skipped for that
+strategy and evaluation continues with the next one.
+
+```go
+// internal/replybot/strategy.go
+
+// ConditionedStrategy is an optional extension of Strategy.
+type ConditionedStrategy interface {
+    Strategy
+    Condition() middleware.MessageAuditor
+}
+```
+
+`Bot.Handle` accepts a `*discordgo.Session` so conditions like `AuthorHasRole` can inspect guild
+state:
+
+```go
+// internal/replybot/bot.go
+func (b *Bot) Handle(ctx context.Context, s *discordgo.Session, m *discordgo.MessageCreate)
+```
+
+### WithCondition — compose at the call site
+
+`WithCondition` wraps any existing `Strategy` with a condition without requiring changes to the
+strategy struct:
+
+```go
+// internal/replybot/condition.go
+func WithCondition(cond middleware.MessageAuditor, s Strategy) Strategy
+```
+
+### Example — BunkBot with mixed strategies
+
+```go
+replybot.NewBot(sender,
+    // BotBot: responds only when the author is a bot
+    replybot.WithCondition(middleware.IsBot, botBotStrategy),
+
+    // Human-only strategy: responds only to non-bot authors
+    replybot.WithCondition(middleware.NotBot, someHumanStrategy),
+
+    // Unconditioned: no extra filtering beyond the bot-level auditor
+    anotherStrategy,
+)
+```
+
+### Tier summary
+
+| Tier | Mechanism | Where declared | Example |
+|------|-----------|----------------|---------|
+| 1 | `MessageAuditor` in `bot.Run()` | `cmd/<bot>/main.go` | `NotSelf`, `NotBot` (BlueBot) |
+| 2 | `ConditionedStrategy` / `WithCondition` | Strategy construction | `IsBot` for BotBot |
+
+---
+
 ## See Also
 
 - [[../infrastructure/Architecture|Architecture]] — shared library overview and bot pattern

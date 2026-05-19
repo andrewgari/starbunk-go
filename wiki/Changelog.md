@@ -33,6 +33,60 @@ Add an entry under today's date for every PR or significant change.
 
 ---
 
+## 2026-05-19 (3)
+
+- **Fully automated release pipeline**: every merge to `main` now auto-versions,
+  builds, and deploys — no manual `git tag` needed.
+  - `main.yml` bumps semver from conventional commit title (feat→minor,
+    feat!→major, everything else→patch), builds all 5 bots, pushes
+    `:vX.Y.Z` + `:latest` + `:sha-*`, creates git tag + GitHub Release.
+  - `release.yml` deleted — it is no longer needed.
+  - `deploy.yml` now pins Tower to the specific version tag (`:vX.Y.Z`)
+    rather than always pulling `:latest`.
+
+## 2026-05-19 (2)
+
+- **Compose/deploy audit guidance added to AGENTS.md**: added "Image tag chain
+  audit" checklist to the DevOps maintenance section, requiring agents to
+  verify workflow image names, tag variables, and pre-release behaviour when
+  editing CI/CD workflows.
+- **Fixed wiki inaccuracy** in `wiki/Versioning.md`: pre-release deploys do
+  _not_ pull the RC image tag — Tower continues running `:latest`. Corrected
+  the description and documented the manual override process.
+
+---
+
+## 2026-05-15 (3)
+
+- **Tag-based release system**: replaced automatic semver-from-PR-labels with
+  an explicit `git tag v1.3.0 && git push origin v1.3.0` release flow.
+  - New `release.yml` workflow: triggers on `v*` tag push, validates the tag
+    is on `main`, runs lint+test, builds all 5 bot images tagged `:vX.Y.Z` +
+    `:latest`, creates GitHub Release (which triggers Tower deploy).
+  - Simplified `main.yml`: removed `semver_tag`, `publish_release`, and
+    `versioned_bots` logic. Now only publishes `:main`/`:sha-*` images and
+    creates `build-YYYYMMDD-sha` breadcrumb tags on merge.
+  - `:latest` is now exclusively owned by `release.yml` — Tower always runs a
+    named, intentional release.
+
+## 2026-05-15 (2)
+
+- Migrated `internal/bluebot/` into `cmd/bluebot/` — `BlueStrategy` and its
+  Ginkgo test suite now live alongside `main.go` as `package main`.
+  The `internal/bluebot` package is deleted; no other packages are affected.
+
+## 2026-05-15
+
+- Added two-tier condition system to `internal/replybot`:
+  - **Tier 1** (unchanged): bot-level `MessageAuditor` in `bot.Run()` — hard gates like `NotSelf`.
+  - **Tier 2** (new): strategy-level conditions via the optional `ConditionedStrategy` interface
+    and the `WithCondition(cond, strategy)` compose helper in `replybot/condition.go`.
+  - `Bot.Handle()` now accepts `*discordgo.Session` so strategy conditions (e.g. `AuthorHasRole`)
+    can inspect guild state.
+  - Enables BunkBot to host mixed strategies: `WithCondition(middleware.IsBot, botBotStrategy)`
+    alongside `WithCondition(middleware.NotBot, humanOnlyStrategy)`.
+  - Added Ginkgo test suite `internal/replybot/bot_test.go` covering all dispatch cases.
+
 ## 2026-05-14
 
 - Fixed critical bug in `.github/workflows/ci.yml`: `docker_test` job was

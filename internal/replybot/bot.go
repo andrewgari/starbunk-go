@@ -27,10 +27,17 @@ func NewBot(sender discord.MessagingService, strategies ...Strategy) *Bot {
 }
 
 // Handle runs each strategy in order and sends the response for the first one
-// that triggers. ctx is forwarded to every strategy call so that async
-// implementations (e.g. LLM providers) can respect cancellation and deadlines.
-func (b *Bot) Handle(ctx context.Context, m *discordgo.MessageCreate) {
+// that triggers. s is the Discord session, forwarded to any ConditionedStrategy
+// so conditions like AuthorHasRole can inspect guild state. ctx is forwarded to
+// every strategy call so that async implementations (e.g. LLM providers) can
+// respect cancellation and deadlines.
+func (b *Bot) Handle(ctx context.Context, s *discordgo.Session, m *discordgo.MessageCreate) {
 	for _, strategy := range b.strategies {
+		if cs, ok := strategy.(ConditionedStrategy); ok {
+			if !cs.Condition().Audit(s, m) {
+				continue
+			}
+		}
 		if strategy.ShouldTrigger(ctx, m) {
 			resp := strategy.Response(ctx, m)
 			if _, err := b.sender.SendMessage(m.ChannelID, resp); err != nil {
