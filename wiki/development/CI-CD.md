@@ -9,23 +9,45 @@ Triggered on all PRs to `main`. Jobs:
 1. **Validate DevOps Consistency** — runs `scripts/devops-validate.sh`; fails fast if any bot is not registered in all required files.
 2. **Lint** — runs `golangci-lint`.
 3. **Test** — runs `go vet` and `go test ./...`.
-4. **Build** — matrix build; builds each bot binary to verify compilation.
-5. **Docker Test** — builds each Docker image to verify the Dockerfile.
+4. **Build** — matrix build; builds each changed bot binary to verify compilation.
+5. **Docker Test** — builds each changed Docker image to verify the Dockerfile.
 
 All five jobs are required to pass before a PR can merge.
 
-### `main.yml` — Merge to Main
+### `main.yml` — Merge to Main (auto-release)
 
-Triggered on push to `main`. Jobs:
+Triggered on every push to `main`. This is the only workflow that creates releases
+and deploys to Tower — **every merge automatically ships**. Jobs:
 
 1. **Validate DevOps Consistency**
-2. **Test**
-3. **Build + Push Docker Images** — builds and pushes each bot image to GHCR; tags `:latest`.
-4. **Tag Release** — creates a git build tag.
+2. **Lint**
+3. **Test**
+4. **Determine Version** — reads the last `v*` git tag and the merge commit title
+   to compute the next semver (major/minor/patch via conventional commits).
+5. **Docker Publish** — builds all five bots in parallel; pushes `:vX.Y.Z`,
+   `:latest`, and `:sha-<short-sha>` to GHCR.
+6. **Create Release** — creates a `vX.Y.Z` git tag and GitHub Release, which
+   triggers `deploy.yml` automatically.
 
 ### `deploy.yml` — Deploy to Tower
 
-Triggered automatically after `main.yml` succeeds. See [[../infrastructure/Deployment|Deployment]].
+Triggered automatically when a GitHub Release is published (i.e., after `main.yml`
+completes). Tower deploys `:vX.Y.Z` (the specific version that was just released).
+See [[../infrastructure/Deployment|Deployment]].
+
+---
+
+## Version bump rules
+
+The `version` job reads the merge commit title (conventional commits):
+
+| Commit title | Bump |
+|---|---|
+| `feat!:` or body contains `BREAKING CHANGE` | major |
+| `feat:` | minor |
+| `fix:`, `chore:`, `refactor:`, anything else | patch |
+
+---
 
 ## Definition of Done
 
@@ -41,3 +63,4 @@ A task is **not complete** until:
 
 - `.github/workflows/`
 - [[../infrastructure/Deployment|Deployment]]
+- [[../Versioning|Versioning]]

@@ -125,6 +125,29 @@ Run the validation after any task involving:
 - Editing `scripts/deployment/health-check.sh`
 - Editing `AGENTS.md` (keep the bot lists here in sync too)
 
+### Image tag chain audit — required when editing release or deploy workflows
+
+When touching `.github/workflows/deploy.yml`, `main.yml`, or
+`scripts/deployment/deploy.sh`, **manually verify the full image tag chain**:
+
+1. **Workflow → GHCR**: confirm the image names built/pushed in the workflow
+   match the pattern `ghcr.io/andrewgari/starbunk-go-<bot>:<tag>`.
+2. **GHCR → compose**: confirm `docker-compose.yml` references the same image
+   names and the tag variable (`${IMAGE_TAG:-latest}`) resolves correctly for
+   how the workflow sets it.
+3. **deploy.yml → deploy.sh**: confirm the `DEPLOY_TAG` argument passed from
+   `deploy.yml` (line that calls `deploy.sh`) matches what `docker-compose.yml`
+   expects. Currently `deploy.yml` passes `latest`; `deploy.sh` exports it as
+   `IMAGE_TAG`; compose resolves `${IMAGE_TAG:-latest}`.
+4. **Pre-release behaviour**: tags with a hyphen suffix (e.g., `v1.3.0-rc.1`)
+   do **not** update `:latest`. `deploy.yml` still fires for pre-releases (any
+   GitHub Release triggers it), but Tower will pull `:latest` (the previous
+   stable image) — it does **not** pull the RC tag. Document this wherever the
+   pre-release flow is described.
+5. **Wiki accuracy**: after any change to the deploy flow, update
+   `wiki/Versioning.md` and `wiki/development/CI-CD.md` to reflect the actual
+   tag resolution behaviour.
+
 ---
 
 ## Architecture
@@ -184,9 +207,9 @@ In Docker Compose, each service resolves its token as `${BOTNAME_TOKEN:-${STARBU
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `ci.yml` | PRs to `main` | Validate DevOps consistency, go vet, go test, build each bot binary |
-| `main.yml` | Merge to `main` | Validate DevOps consistency, test, build+push Docker images to GHCR, tag `:latest`, create git build tag |
-| `deploy.yml` | After `main.yml` succeeds | Tailscale SSH to Tower, stage new compose file, pull images, restart services, health check |
+| `ci.yml` | PRs to `main` | Validate DevOps consistency, go vet, go test, build each changed bot binary + Docker smoke test |
+| `main.yml` | Merge to `main` | Lint, test, auto-bump semver from conventional commit, build+push all 5 bot images (`:vX.Y.Z` `:latest` `:sha-*`), create git tag + GitHub Release → triggers deploy |
+| `deploy.yml` | GitHub Release published | Tailscale SSH to Tower, stage new compose file, pull images (pinned to `:vX.Y.Z`), restart services, health check |
 
 GHCR image names follow the pattern `ghcr.io/andrewgari/starbunk-go-<bot>:<tag>`.
 
