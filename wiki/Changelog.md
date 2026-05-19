@@ -3,9 +3,6 @@
 Running log of all significant work done on starbunk-go.
 Add an entry under today's date for every PR or significant change.
 
----
-
-<<<<<<< test/e2e-bot-testing-pipeline
 ## 2026-05-11
 
 - Added `internal/middleware/trace.go`: `TraceAudit`, `AuditNode`, `AuditVerdict` (Passed/Failed/Ignored), `Named` wrapper, and `FormatTrace`. Produces a full auditor-tree trace with short-circuit visibility; zero impact on existing API or tests.
@@ -13,6 +10,114 @@ Add an entry under today's date for every PR or significant change.
 - Added `cmd/<bot>/bot_test.go` and `cmd/<bot>/e2e_test.go` for all 5 bots (35 Ginkgo specs total). Each spec table covers: auditor gate enforcement, handler invocation, and captured outbound message assertions. BunkBot/DJCova/RatBot additionally verify that bot-authors and DMs are intentionally allowed by their `AllOf(NotSelf, HasContent)` policy.
 - Updated `wiki/bots/*.md` with E2E Testing sections.
 =======
+=======
+## 2026-05-14 — Add self-correction protocol to AGENTS.md
+
+### Added
+- Self-Correction Protocol section in `AGENTS.md` with six recovery steps:
+  0. pre-edit sync/read/blast-radius check
+  1. post-change verification loop (`go build`, `go vet`, `go test`, per-bot build, `golangci-lint`)
+  2. error-reading discipline (no blind retries, no `//nolint` suppression)
+  3. DevOps drift check trigger rule
+  4. wiki/code consistency cross-reference table
+  5. CI failure recovery sequence
+  6. uncertainty protocol (build → wiki → git log → ask)
+
+---
+
+## 2026-05-14 — Port agentic guidance from starbunk-js
+
+### Added
+- CHANGELOG staging workflow (`wiki/raw/CHANGELOG-<branch>.md` pattern) in `AGENTS.md`.
+- Development Constraints section in `AGENTS.md`: no secret commits, container
+  isolation rules, self-message guard, non-blocking handler requirement.
+- "What counts as meaningful" definition for wiki update rule in `AGENTS.md`.
+- Pre-done checklist: `go test ./...` locally required before declaring tasks done.
+- BlueBot rate-limit specifics (5-min standard / 24-hour rare reply windows).
+- CovaBot 4-stage decision pipeline and social battery documented in `cmd/covabot/CLAUDE.md`.
+- LLM provider priority order (Ollama → Anthropic → Gemini → OpenAI) added to CovaBot docs.
+
+---
+
+## 2026-05-19 (3)
+
+- **Fully automated release pipeline**: every merge to `main` now auto-versions,
+  builds, and deploys — no manual `git tag` needed.
+  - `main.yml` bumps semver from conventional commit title (feat→minor,
+    feat!→major, everything else→patch), builds all 5 bots, pushes
+    `:vX.Y.Z` + `:latest` + `:sha-*`, creates git tag + GitHub Release.
+  - `release.yml` deleted — it is no longer needed.
+  - `deploy.yml` now pins Tower to the specific version tag (`:vX.Y.Z`)
+    rather than always pulling `:latest`.
+
+## 2026-05-19 (2)
+
+- **Compose/deploy audit guidance added to AGENTS.md**: added "Image tag chain
+  audit" checklist to the DevOps maintenance section, requiring agents to
+  verify workflow image names, tag variables, and pre-release behaviour when
+  editing CI/CD workflows.
+- **Fixed wiki inaccuracy** in `wiki/Versioning.md`: pre-release deploys do
+  _not_ pull the RC image tag — Tower continues running `:latest`. Corrected
+  the description and documented the manual override process.
+
+---
+
+## 2026-05-15 (3)
+
+- **Tag-based release system**: replaced automatic semver-from-PR-labels with
+  an explicit `git tag v1.3.0 && git push origin v1.3.0` release flow.
+  - New `release.yml` workflow: triggers on `v*` tag push, validates the tag
+    is on `main`, runs lint+test, builds all 5 bot images tagged `:vX.Y.Z` +
+    `:latest`, creates GitHub Release (which triggers Tower deploy).
+  - Simplified `main.yml`: removed `semver_tag`, `publish_release`, and
+    `versioned_bots` logic. Now only publishes `:main`/`:sha-*` images and
+    creates `build-YYYYMMDD-sha` breadcrumb tags on merge.
+  - `:latest` is now exclusively owned by `release.yml` — Tower always runs a
+    named, intentional release.
+
+## 2026-05-15 (2)
+
+- Migrated `internal/bluebot/` into `cmd/bluebot/` — `BlueStrategy` and its
+  Ginkgo test suite now live alongside `main.go` as `package main`.
+  The `internal/bluebot` package is deleted; no other packages are affected.
+
+## 2026-05-15
+
+- Added two-tier condition system to `internal/replybot`:
+  - **Tier 1** (unchanged): bot-level `MessageAuditor` in `bot.Run()` — hard gates like `NotSelf`.
+  - **Tier 2** (new): strategy-level conditions via the optional `ConditionedStrategy` interface
+    and the `WithCondition(cond, strategy)` compose helper in `replybot/condition.go`.
+  - `Bot.Handle()` now accepts `*discordgo.Session` so strategy conditions (e.g. `AuthorHasRole`)
+    can inspect guild state.
+  - Enables BunkBot to host mixed strategies: `WithCondition(middleware.IsBot, botBotStrategy)`
+    alongside `WithCondition(middleware.NotBot, humanOnlyStrategy)`.
+  - Added Ginkgo test suite `internal/replybot/bot_test.go` covering all dispatch cases.
+
+## 2026-05-14
+
+- Fixed critical bug in `.github/workflows/ci.yml`: `docker_test` job was
+  pushing `:latest` and `sha-{hash}` images to GHCR on every PR, overwriting
+  the production tag. CI now builds and smoke-tests Docker images locally only;
+  GHCR publishing happens exclusively in `main.yml` after merge.
+- Removed `packages: write` permission from `ci.yml` (PRs never need to write
+  to GHCR).
+- Added `.golangci.yml` with an explicit linter set (`govet`, `errcheck`,
+  `staticcheck`, `ineffassign`, `unused`, `gofmt`, `goimports`, `misspell`,
+  `whitespace`, `gosec`, `noctx`) so linter behaviour is pinned and
+  reproducible across golangci-lint versions.
+
+## 2026-05-13 (2)
+
+- Deleted `internal/config.go` and `internal/config_test.go` — dead scaffold
+  from project init (`package pkg`, `func HelloShared()`).
+- Added `/bluebot`, `/bunkbot`, `/covabot`, `/djcova`, `/ratbot` to
+  `.gitignore` so root-level built binaries are never accidentally staged.
+- Tightened `scripts/devops-validate.sh` ci.yml check: changed
+  `grep "${bot}"` to `grep "cmd/${bot}/"` so a bot name in a comment no
+  longer satisfies the check.
+- Migrated all logging from `log`/`fmt` to `log/slog` (stdlib, Go 1.21).
+  Every log call now emits structured fields: `bot=`, `strategy=`,
+  `channel=`, `err=`. No new dependencies.
 ## 2026-05-13
 
 - Implemented BlueBot strategy engine in `internal/bluebot/` and shared
@@ -34,7 +139,6 @@ Add an entry under today's date for every PR or significant change.
   (`bluetooth`, `blueprint`, `blueberry`), catchphrase.
 - Updated `wiki/bots/BlueBot.md` with architecture overview and extensibility
   roadmap.
->>>>>>> main
 
 ## 2026-05-09
 

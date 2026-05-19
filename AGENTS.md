@@ -15,8 +15,58 @@ read it directly.
 2. **After completing any task** — update the relevant wiki page(s) to reflect any changes to architecture, behavior, configuration, or patterns.
 3. **For every significant change or PR** — add an entry to `wiki/Changelog.md` under today's date.
 4. If a wiki page does not exist for the area you are working in, **create it**.
+5. Create new pages freely. Use plain relative links to connect related pages.
+6. Keep `wiki/raw/` for drafts and staged content. Promote to `wiki/` on merge.
 
 The wiki lives at `wiki/` in the repo root. Start at `wiki/Home.md`.
+
+### What counts as "meaningful"
+
+Any change that affects: architecture, configuration, a bot's behavior,
+infrastructure, deployment, testing strategy, a new feature, or a bug fix with
+a non-obvious root cause.
+
+---
+
+## CHANGELOG Workflow
+
+Every branch that introduces meaningful changes maintains its own changelog
+entry in `wiki/raw/`.
+
+### While working on a branch
+
+Create or update `wiki/raw/CHANGELOG-<branch-name>.md` as you go. Format:
+
+```markdown
+## [Unreleased] — <branch-name>
+
+### Added
+- ...
+
+### Changed
+- ...
+
+### Fixed
+- ...
+```
+
+Commit this file alongside code changes. It is the staging area for the real
+changelog.
+
+### On merge (PR completion)
+
+Prepend the branch entry into `wiki/Changelog.md` under the current date, then
+delete `wiki/raw/CHANGELOG-<branch-name>.md`. The permanent changelog lives at
+`wiki/Changelog.md`.
+
+Format for a merged entry in `wiki/Changelog.md`:
+
+```markdown
+## YYYY-MM-DD — <short description> (#PR)
+
+### Added / Changed / Fixed
+- ...
+```
 
 ---
 
@@ -36,17 +86,130 @@ when the task matches — don't describe what you would do, just do it.
 
 ---
 
+## Self-Correction Protocol
+
+When something doesn't work as expected, work through this sequence before
+retrying or escalating.
+
+### 0. Before touching any file — sync and read
+
+1. Confirm you are on the correct branch and it is up to date with `main`.
+2. **Read every file you are about to change.** Never edit from memory or from
+   a previous read earlier in the conversation.
+3. If your change touches `internal/`, grep all callers first:
+   ```bash
+   grep -rn "SymbolYouAreChanging" cmd/ internal/
+   ```
+   You need to know the full blast radius before writing a single line.
+
+### 1. After any code change — verify in this order
+
+```bash
+go build ./...            # all packages compile (catches import errors fast)
+go vet ./...              # catches common Go mistakes
+go test ./...             # all tests pass
+```
+
+If you changed anything in `internal/` (shared code), also build every bot
+individually to confirm nothing silently broke:
+
+```bash
+for bot in bluebot bunkbot covabot djcova ratbot; do
+    go build ./cmd/$bot/ || echo "BROKEN: $bot"
+done
+```
+
+Run lint before opening a PR — it catches what tests do not:
+
+```bash
+golangci-lint run
+```
+
+### 2. Read errors completely before acting
+
+- **Never retry a failed command with identical input.** If it failed once, it
+  will fail again.
+- Read the full error output. The root cause is usually in the first or last
+  few lines, not buried in the middle.
+- If a lint error appears, fix exactly what is reported. Do not add `//nolint`
+  suppressions to make it disappear — that hides a real problem.
+- If a test fails, decide: **is the test wrong, or is the code wrong?** Fix
+  the right thing.
+
+### 3. DevOps drift check
+
+If you touched any of: `cmd/`, `docker-compose.yml`, `docker/docker-compose.yml`,
+`.github/workflows/`, `scripts/deployment/health-check.sh`:
+
+```bash
+bash scripts/devops-validate.sh
+```
+
+A `FAIL` here blocks CI. Fix it before opening or updating a PR.
+
+### 4. Wiki / code consistency check
+
+Before closing a task, ask for each file you changed:
+
+| Changed area | Wiki page to verify |
+|---|---|
+| A bot's behaviour, commands, config | `cmd/<bot>/CLAUDE.md` + `wiki/bots/<Bot>.md` |
+| `internal/` contracts or architecture | `wiki/infrastructure/Architecture.md` |
+| CI/CD workflows | `wiki/development/CI-CD.md` |
+| Testing patterns | `wiki/development/Testing.md` |
+| Deployment, Docker, health checks | `wiki/infrastructure/Deployment.md` |
+
+Mismatch between code and docs is a bug. Update the docs.
+
+### 5. When CI fails on a PR
+
+1. Read the failing job log in full — don't skim.
+2. Identify the exact root cause before writing any fix.
+3. Fix only what is broken; don't refactor unrelated code in the same commit.
+4. Push the fix and wait for the check to re-run.
+5. If the same check fails twice with the same message, stop and investigate
+   the environment or assumptions before trying again.
+
+### 6. When you are unsure whether a change is correct
+
+- Run `go build ./...` and `go test ./...` first — if these are red, the
+  question is moot.
+- Check the relevant `wiki/` page — it may document the expected behaviour.
+- Check git log for the file (`git log --oneline -10 <file>`) — recent commit
+  messages often explain the design intent.
+- If still unsure, ask. Do not guess and ship.
+
+---
+
 ## Definition of Done
 
 A task is **not complete** until:
 
-1. All CI checks pass (`Validate DevOps Consistency`, `Lint`, `Test`).
-2. If a PR was opened — it has at least one approval and all checks are green.
-3. `bash scripts/devops-validate.sh` exits cleanly (if any bot or CI/CD file was touched).
-4. The relevant `wiki/` page(s) have been updated.
-5. An entry has been added to `wiki/Changelog.md`.
+- [ ] All CI checks pass (`Validate DevOps Consistency`, `Lint`, `Test`)
+- [ ] If a PR was opened — it has at least one approval and all checks are green
+- [ ] `bash scripts/devops-validate.sh` exits cleanly (if any bot or CI/CD file was touched)
+- [ ] `go test ./...` passes locally
+- [ ] The relevant `wiki/` page(s) have been updated
+- [ ] An entry has been added to `wiki/Changelog.md` (or `wiki/raw/CHANGELOG-<branch>.md` if the PR is still open)
 
 "The code works locally" is not done. "The PR is open" is not done.
+
+---
+
+## Development Constraints
+
+- **Never commit secrets or local config** — `.env` files, tokens, and anything
+  under `config/`, `local/`, or `data/` directories must not be committed.
+- **Maintain container isolation** — each bot binary under `cmd/<bot>/` is its
+  own container. Cross-bot shared logic belongs in `internal/`, not copied
+  between bots.
+- **Self-message guard** — every message handler must begin with
+  `if m.Author.ID == s.State.User.ID { return }` to prevent bot reply loops.
+- **Non-blocking handlers** — Discord event handlers run on a shared goroutine.
+  Any slow operation (LLM calls, HTTP, audio processing) must be dispatched in
+  a separate goroutine so it cannot stall other handlers.
+- **Use correct Docker service names** — internal service communication uses the
+  service names defined in `docker-compose.yml` (e.g. `starbunk-go-bunkbot`).
 
 ---
 
@@ -125,6 +288,29 @@ Run the validation after any task involving:
 - Editing `scripts/deployment/health-check.sh`
 - Editing `AGENTS.md` (keep the bot lists here in sync too)
 
+### Image tag chain audit — required when editing release or deploy workflows
+
+When touching `.github/workflows/deploy.yml`, `main.yml`, or
+`scripts/deployment/deploy.sh`, **manually verify the full image tag chain**:
+
+1. **Workflow → GHCR**: confirm the image names built/pushed in the workflow
+   match the pattern `ghcr.io/andrewgari/starbunk-go-<bot>:<tag>`.
+2. **GHCR → compose**: confirm `docker-compose.yml` references the same image
+   names and the tag variable (`${IMAGE_TAG:-latest}`) resolves correctly for
+   how the workflow sets it.
+3. **deploy.yml → deploy.sh**: confirm the `DEPLOY_TAG` argument passed from
+   `deploy.yml` (line that calls `deploy.sh`) matches what `docker-compose.yml`
+   expects. Currently `deploy.yml` passes `latest`; `deploy.sh` exports it as
+   `IMAGE_TAG`; compose resolves `${IMAGE_TAG:-latest}`.
+4. **Pre-release behaviour**: tags with a hyphen suffix (e.g., `v1.3.0-rc.1`)
+   do **not** update `:latest`. `deploy.yml` still fires for pre-releases (any
+   GitHub Release triggers it), but Tower will pull `:latest` (the previous
+   stable image) — it does **not** pull the RC tag. Document this wherever the
+   pre-release flow is described.
+5. **Wiki accuracy**: after any change to the deploy flow, update
+   `wiki/Versioning.md` and `wiki/development/CI-CD.md` to reflect the actual
+   tag resolution behaviour.
+
 ---
 
 ## Architecture
@@ -184,9 +370,9 @@ In Docker Compose, each service resolves its token as `${BOTNAME_TOKEN:-${STARBU
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `ci.yml` | PRs to `main` | Validate DevOps consistency, go vet, go test, build each bot binary |
-| `main.yml` | Merge to `main` | Validate DevOps consistency, test, build+push Docker images to GHCR, tag `:latest`, create git build tag |
-| `deploy.yml` | After `main.yml` succeeds | Tailscale SSH to Tower, stage new compose file, pull images, restart services, health check |
+| `ci.yml` | PRs to `main` | Validate DevOps consistency, go vet, go test, build each changed bot binary + Docker smoke test |
+| `main.yml` | Merge to `main` | Lint, test, auto-bump semver from conventional commit, build+push all 5 bot images (`:vX.Y.Z` `:latest` `:sha-*`), create git tag + GitHub Release → triggers deploy |
+| `deploy.yml` | GitHub Release published | Tailscale SSH to Tower, stage new compose file, pull images (pinned to `:vX.Y.Z`), restart services, health check |
 
 GHCR image names follow the pattern `ghcr.io/andrewgari/starbunk-go-<bot>:<tag>`.
 

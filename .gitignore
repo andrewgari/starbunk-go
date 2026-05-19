@@ -1,9 +1,15 @@
 # Binaries
 /bin/
+/bluebot
+/bunkbot
+/covabot
+/djcova
+/ratbot
 cmd/*/main
 cmd/*/*
 !cmd/*/*.md
 !cmd/*/*_test.go
+!cmd/*/*.go
 
 # Build output
 *.exe

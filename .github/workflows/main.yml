@@ -1,16 +1,20 @@
 name: CD / Main Merge
 
+# Every merge to main: lint → test → determine next semver → build all bots
+# → push :vX.Y.Z + :latest + :sha-<sha> → create git tag → GitHub Release
+# → deploy.yml fires automatically via the published release event.
+#
+# Version bump is derived from the conventional commit title:
+#   feat!: / BREAKING CHANGE  → major  (X+1.0.0)
+#   feat:                     → minor  (X.Y+1.0)
+#   anything else             → patch  (X.Y.Z+1)
+#
+# workflow_dispatch rebuilds everything and defaults to a patch bump.
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      bump_type:
-        description: 'Semver bump type (manual trigger only)'
-        required: false
-        default: 'patch'
-        type: choice
-        options: [patch, minor, major]
 
 permissions:
   contents: write
@@ -18,79 +22,10 @@ permissions:
 
 jobs:
 
-  # ─── Detect which bots changed ───────────────────────────────────────────────
-  detect_changes:
-    name: Detect Changed Bots
-    runs-on: ubuntu-latest
-    # Skip when the build-tag commit itself triggers the workflow.
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      !contains(github.event.head_commit.message, '[skip ci]')
-    outputs:
-      bots: ${{ steps.matrix.outputs.bots }}
-      # versioned_bots: bots with actual code changes (excludes CI-only safety-net rebuilds).
-      # Only these bots receive a semver bump.
-      versioned_bots: ${{ steps.matrix.outputs.versioned_bots }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dorny/paths-filter@v3
-        id: filter
-        if: github.event_name != 'workflow_dispatch'
-        with:
-          filters: |
-            bluebot:
-              - 'cmd/bluebot/**'
-            bunkbot:
-              - 'cmd/bunkbot/**'
-            covabot:
-              - 'cmd/covabot/**'
-            djcova:
-              - 'cmd/djcova/**'
-            ratbot:
-              - 'cmd/ratbot/**'
-            internal:
-              - 'internal/**'
-              - 'go.mod'
-              - 'go.sum'
-              - 'docker/Dockerfile'
-
-      - name: Build bot matrix
-        id: matrix
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo 'bots=["bluebot","bunkbot","covabot","djcova","ratbot"]' >> $GITHUB_OUTPUT
-            echo 'versioned_bots=["bluebot","bunkbot","covabot","djcova","ratbot"]' >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          BOTS=()
-          # Internal/shared changes (internal/, go.mod, Dockerfile) rebuild all bots.
-          if [ "${{ steps.filter.outputs.internal }}" == "true" ]; then
-            BOTS=("bluebot" "bunkbot" "covabot" "djcova" "ratbot")
-          else
-            [[ "${{ steps.filter.outputs.bluebot }}" == "true" ]] && BOTS+=("bluebot")
-            [[ "${{ steps.filter.outputs.bunkbot }}" == "true" ]] && BOTS+=("bunkbot")
-            [[ "${{ steps.filter.outputs.covabot }}" == "true" ]] && BOTS+=("covabot")
-            [[ "${{ steps.filter.outputs.djcova }}"  == "true" ]] && BOTS+=("djcova")
-            [[ "${{ steps.filter.outputs.ratbot }}"  == "true" ]] && BOTS+=("ratbot")
-          fi
-
-          if [ ${#BOTS[@]} -eq 0 ]; then
-            # CI/root files only — rebuild all as safety net, but do NOT bump versions.
-            echo 'bots=["bluebot","bunkbot","covabot","djcova","ratbot"]' >> $GITHUB_OUTPUT
-            echo 'versioned_bots=[]' >> $GITHUB_OUTPUT
-          else
-            BOTS_JSON=$(printf '%s\n' "${BOTS[@]}" | jq -R . | jq -sc .)
-            echo "bots=$BOTS_JSON" >> $GITHUB_OUTPUT
-            echo "versioned_bots=$BOTS_JSON" >> $GITHUB_OUTPUT
-          fi
-
-  # ─── DevOps consistency gate ─────────────────────────────────────────────────
+  # ─── Validate DevOps consistency ─────────────────────────────────────────────
   validate_devops:
     name: Validate DevOps Consistency
     runs-on: ubuntu-latest
-    needs: detect_changes
     steps:
       - uses: actions/checkout@v4
       - name: Check all DevOps files are in sync
@@ -100,7 +35,6 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    needs: detect_changes
     steps:
       - uses: actions/checkout@v4
 
@@ -118,7 +52,7 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    needs: [detect_changes, validate_devops, lint]
+    needs: [validate_devops, lint]
     steps:
       - uses: actions/checkout@v4
 
@@ -133,31 +67,73 @@ jobs:
       - name: Vet
         run: go vet ./...
 
+      - name: Build
+        run: go build ./...
+
       - name: Run tests
         run: go test ./... -v
 
-  # ─── Docker publish (only changed bots) ──────────────────────────────────────
+  # ─── Determine next semver ────────────────────────────────────────────────────
+  #
+  # Reads the latest v* git tag and the merge commit title to compute the next
+  # version. Falls back to v0.0.0 when no tags exist yet.
+  version:
+    name: Determine Version
+    runs-on: ubuntu-latest
+    needs: [validate_devops, lint, test]
+    outputs:
+      version:  ${{ steps.bump.outputs.version }}
+      previous: ${{ steps.bump.outputs.previous }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Bump version from conventional commit
+        id: bump
+        run: |
+          LATEST=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sort -V | tail -1)
+          PREVIOUS="${LATEST:-v0.0.0}"
+          VER="${PREVIOUS#v}"
+          MA=$(echo "$VER" | cut -d. -f1)
+          MI=$(echo "$VER" | cut -d. -f2)
+          PA=$(echo "$VER" | cut -d. -f3)
+
+          MSG="${{ github.event.head_commit.message }}"
+          if echo "$MSG" | grep -qE '^(feat|fix|chore|refactor|docs|test)(\(.+\))?!:|BREAKING CHANGE'; then
+            NEW="$((MA+1)).0.0"
+            BUMP="major"
+          elif echo "$MSG" | grep -qE '^feat(\(.+\))?:'; then
+            NEW="${MA}.$((MI+1)).0"
+            BUMP="minor"
+          else
+            NEW="${MA}.${MI}.$((PA+1))"
+            BUMP="patch"
+          fi
+
+          echo "version=v${NEW}" >> $GITHUB_OUTPUT
+          echo "previous=${PREVIOUS}" >> $GITHUB_OUTPUT
+          echo "Next version: v${NEW} (${BUMP} bump from ${PREVIOUS})"
+
+  # ─── Build and push Docker images (all bots) ─────────────────────────────────
+  #
+  # Always rebuilds all 5 bots so every release ships a coherent image set at
+  # the same version. Tags: :vX.Y.Z  :latest  :sha-<short-sha>
   docker_publish:
     name: Docker Publish / ${{ matrix.bot }}
     runs-on: ubuntu-latest
-    needs: [detect_changes, validate_devops, lint, test]
+    needs: [version]
     strategy:
       fail-fast: false
       matrix:
-        bot: ${{ fromJson(needs.detect_changes.outputs.bots) }}
+        bot: [bluebot, bunkbot, covabot, djcova, ratbot]
     steps:
       - uses: actions/checkout@v4
 
       - name: Set short SHA
         run: echo "SHORT_SHA=${GITHUB_SHA:0:7}" >> $GITHUB_ENV
-
-      - name: Compute content hash
-        run: |
-          BOT=${{ matrix.bot }}
-          SRC_HASH=$(git rev-parse HEAD:cmd/${BOT} 2>/dev/null || echo "no-hash")
-          INT_HASH=$(git rev-parse HEAD:internal 2>/dev/null || echo "no-internal")
-          MOD_HASH=$(sha256sum go.sum | cut -d' ' -f1 | head -c 12)
-          echo "CONTENT_HASH=${SRC_HASH:0:12}-${INT_HASH:0:12}-${MOD_HASH}" >> $GITHUB_ENV
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -172,312 +148,84 @@ jobs:
       - name: Build and push
         run: |
           BOT=${{ matrix.bot }}
+          VERSION=${{ needs.version.outputs.version }}
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           IMAGE="ghcr.io/${OWNER_LC}/starbunk-go-${BOT}"
 
-          if docker manifest inspect "${IMAGE}:sha-${CONTENT_HASH}" > /dev/null 2>&1; then
-            echo "Identical image already exists (${CONTENT_HASH}). Retagging."
-            docker pull "${IMAGE}:sha-${CONTENT_HASH}"
-            docker tag "${IMAGE}:sha-${CONTENT_HASH}" "${IMAGE}:main"
-            docker push "${IMAGE}:main"
-          else
-            echo "Building ${IMAGE}:main"
-            docker build \
-              -f docker/Dockerfile \
-              --build-arg BOT_NAME="${BOT}" \
-              -t "${IMAGE}:main" \
-              -t "${IMAGE}:sha-${CONTENT_HASH}" \
-              .
-            docker push "${IMAGE}:main"
-            docker push "${IMAGE}:sha-${CONTENT_HASH}"
-          fi
+          docker build \
+            -f docker/Dockerfile \
+            --build-arg BOT_NAME="${BOT}" \
+            -t "${IMAGE}:${VERSION}" \
+            -t "${IMAGE}:latest" \
+            -t "${IMAGE}:sha-${SHORT_SHA}" \
+            .
 
-          docker tag "${IMAGE}:main" "${IMAGE}:sha-${SHORT_SHA}"
+          docker push "${IMAGE}:${VERSION}"
+          docker push "${IMAGE}:latest"
           docker push "${IMAGE}:sha-${SHORT_SHA}"
+          echo "Published ${IMAGE}:${VERSION}, :latest, :sha-${SHORT_SHA}"
 
-  # ─── Tag :latest + create git build tag ──────────────────────────────────────
-  tag_release:
-    name: Tag Release
+  # ─── Tag + release ────────────────────────────────────────────────────────────
+  #
+  # Creates the semver git tag and a GitHub Release. The published release event
+  # triggers deploy.yml automatically.
+  release:
+    name: Create Release
     runs-on: ubuntu-latest
-    needs: [detect_changes, validate_devops, lint, test, docker_publish]
-    outputs:
-      build_tag: ${{ steps.create_build_tag.outputs.build_tag }}
-    if: >-
-      always() &&
-      !cancelled() &&
-      needs.detect_changes.result == 'success' &&
-      needs.validate_devops.result == 'success' &&
-      needs.lint.result == 'success' &&
-      needs.test.result == 'success'
+    needs: [version, docker_publish]
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set short SHA
-        run: echo "SHORT_SHA=${GITHUB_SHA:0:7}" >> $GITHUB_ENV
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Tag images as :latest
-        if: needs.docker_publish.result == 'success'
+      - name: Create git tag
         run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          VERSION=${{ needs.version.outputs.version }}
+          git tag "$VERSION" "${{ github.sha }}" -m "Release ${VERSION}"
+          git push origin "$VERSION"
+          echo "Created tag: ${VERSION}"
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          VERSION=${{ needs.version.outputs.version }}
+          PREVIOUS=${{ needs.version.outputs.previous }}
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          for BOT in $(echo '${{ needs.detect_changes.outputs.bots }}' | jq -r '.[]'); do
-            IMAGE="ghcr.io/${OWNER_LC}/starbunk-go-${BOT}"
-            docker pull "${IMAGE}:main"
-            docker tag "${IMAGE}:main" "${IMAGE}:latest"
-            docker push "${IMAGE}:latest"
-            echo "Tagged ${IMAGE}:latest"
-          done
 
-      - name: Create build tag
-        id: create_build_tag
-        run: |
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          BUILD_TAG="build-$(date +%Y%m%d)-${SHORT_SHA}"
-          git tag "$BUILD_TAG" -m "CI build ${GITHUB_RUN_NUMBER} from ${GITHUB_SHA:0:7}"
-          git push origin "$BUILD_TAG"
-          echo "build_tag=$BUILD_TAG" >> $GITHUB_OUTPUT
-          echo "Created build tag: ${BUILD_TAG}"
-
-  # ─── Semver version tags ──────────────────────────────────────────────────────
-  #
-  # Determines the bump type from PR labels (or conventional commit title),
-  # creates a `<bot>/vX.Y.Z` git tag on the merge commit for each affected bot,
-  # and re-tags the published Docker images with the semver version.
-  #
-  # Bump type resolution order:
-  #   1. PR label  bump:major / breaking  → major
-  #   2. PR label  bump:minor / feat / feature / enhancement  → minor
-  #   3. PR label  bump:patch / fix / bug / chore  → patch
-  #   4. PR title  feat(...)!: or BREAKING CHANGE  → major
-  #   5. PR title  feat(...):  → minor
-  #   6. Default  → patch
-  #
-  # CI-only PRs (no bot code changed) produce versioned_bots=[] and are skipped.
-  semver_tag:
-    name: Semver Version Tags
-    runs-on: ubuntu-latest
-    needs: [detect_changes, validate_devops, lint, test, docker_publish]
-    outputs:
-      repo_version: ${{ steps.create_repo_tag.outputs.repo_version }}
-    if: >-
-      always() &&
-      !cancelled() &&
-      needs.detect_changes.result == 'success' &&
-      needs.validate_devops.result == 'success' &&
-      needs.lint.result == 'success' &&
-      needs.test.result == 'success'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Determine bump type
-        id: bump
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          BUMP_TYPE="patch"
-
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            BUMP_TYPE="${{ inputs.bump_type }}"
+          if [ "$PREVIOUS" != "v0.0.0" ]; then
+            CHANGES=$(git log --oneline "${PREVIOUS}..HEAD" \
+              | grep -v 'Merge pull request' \
+              | head -30 \
+              | sed 's/^/- /' || true)
+            RANGE="${PREVIOUS}..${VERSION}"
           else
-            # Resolve the PR associated with this merge commit via GitHub API.
-            PR_DATA=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" \
-              --jq '.[0] | {labels: [.labels[].name], title: .title}' 2>/dev/null \
-              || echo '{"labels":[],"title":""}')
-
-            PR_LABELS=$(echo "$PR_DATA" | jq -r '.labels[]' | tr '\n' ' ')
-            PR_TITLE=$(echo "$PR_DATA"  | jq -r '.title')
-
-            echo "PR labels: ${PR_LABELS}"
-            echo "PR title:  ${PR_TITLE}"
-
-            # Labels take precedence; conventional commit title is the fallback.
-            if echo "$PR_LABELS" | grep -qiE '\bbump:major\b|\bbreaking\b'; then
-              BUMP_TYPE="major"
-            elif echo "$PR_LABELS" | grep -qiE '\bbump:minor\b|\bfeat\b|\bfeature\b|\benhancement\b'; then
-              BUMP_TYPE="minor"
-            elif echo "$PR_LABELS" | grep -qiE '\bbump:patch\b|\bfix\b|\bbug\b|\bchore\b'; then
-              BUMP_TYPE="patch"
-            elif echo "$PR_TITLE" | grep -qiE '^(feat|fix|chore|refactor)(\(.+\))?!:|BREAKING CHANGE'; then
-              BUMP_TYPE="major"
-            elif echo "$PR_TITLE" | grep -qiE '^feat(\(.+\))?:'; then
-              BUMP_TYPE="minor"
-            fi
+            CHANGES="- Initial release"
+            RANGE="${VERSION}"
           fi
 
-          echo "type=${BUMP_TYPE}" >> $GITHUB_OUTPUT
-          echo "Bump type: ${BUMP_TYPE}"
-
-      - name: Create semver git tags
-        if: needs.detect_changes.outputs.versioned_bots != '[]'
-        run: |
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          BUMP_TYPE="${{ steps.bump.outputs.type }}"
-          BOTS=$(echo '${{ needs.detect_changes.outputs.versioned_bots }}' | jq -r '.[]')
-
-          for BOT in $BOTS; do
-            LATEST=$(git tag -l "${BOT}/v*" \
-              | grep -E "^${BOT}/v[0-9]+\.[0-9]+\.[0-9]+$" \
-              | sort -V | tail -1)
-
-            if [ -z "$LATEST" ]; then
-              case $BUMP_TYPE in
-                major) NEW="1.0.0" ;;
-                minor) NEW="0.1.0" ;;
-                *)     NEW="0.0.1" ;;
-              esac
-            else
-              VER=${LATEST#${BOT}/v}
-              MA=$(echo "$VER" | cut -d. -f1)
-              MI=$(echo "$VER" | cut -d. -f2)
-              PA=$(echo "$VER" | cut -d. -f3)
-              case $BUMP_TYPE in
-                major) NEW="$((MA+1)).0.0" ;;
-                minor) NEW="${MA}.$((MI+1)).0" ;;
-                *)     NEW="${MA}.${MI}.$((PA+1))" ;;
-              esac
-            fi
-
-            TAG="${BOT}/v${NEW}"
-            if git tag -l "$TAG" | grep -q "^${TAG}$"; then
-              echo "Tag ${TAG} already exists — skipping"
-            else
-              git tag "$TAG" "${{ github.sha }}" -m "Release ${BOT} v${NEW}"
-              git push origin "$TAG"
-              echo "Created tag: ${TAG}"
-            fi
-          done
-
-      - name: Login to GHCR
-        if: needs.docker_publish.result == 'success'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Tag Docker images with semver version
-        if: needs.docker_publish.result == 'success'
-        run: |
-          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          BOTS=$(echo '${{ needs.detect_changes.outputs.versioned_bots }}' | jq -r '.[]')
-
-          for BOT in $BOTS; do
-            IMAGE="ghcr.io/${OWNER_LC}/starbunk-go-${BOT}"
-            VERSION=$(git tag -l "${BOT}/v*" \
-              | grep -E "^${BOT}/v[0-9]+\.[0-9]+\.[0-9]+$" \
-              | sort -V | tail -1 \
-              | sed "s|^${BOT}/v||")
-
-            if [ -n "$VERSION" ]; then
-              docker pull "${IMAGE}:main"
-              docker tag "${IMAGE}:main" "${IMAGE}:v${VERSION}"
-              docker push "${IMAGE}:v${VERSION}"
-              echo "Tagged ${IMAGE}:v${VERSION}"
-            fi
-          done
-
-      - name: Create repo-level semver tag
-        id: create_repo_tag
-        run: |
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          BUMP_TYPE="${{ steps.bump.outputs.type }}"
-
-          LATEST=$(git tag -l "v[0-9]*" \
-            | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+$" \
-            | sort -V | tail -1)
-
-          if [ -z "$LATEST" ]; then
-            case $BUMP_TYPE in
-              major) NEW="1.0.0" ;;
-              minor) NEW="0.1.0" ;;
-              *)     NEW="0.0.1" ;;
-            esac
-          else
-            VER=${LATEST#v}
-            MA=$(echo "$VER" | cut -d. -f1)
-            MI=$(echo "$VER" | cut -d. -f2)
-            PA=$(echo "$VER" | cut -d. -f3)
-            case $BUMP_TYPE in
-              major) NEW="$((MA+1)).0.0" ;;
-              minor) NEW="${MA}.$((MI+1)).0" ;;
-              *)     NEW="${MA}.${MI}.$((PA+1))" ;;
-            esac
-          fi
-
-          TAG="v${NEW}"
-          if git tag -l "$TAG" | grep -q "^${TAG}$"; then
-            echo "Tag ${TAG} already exists — skipping"
-          else
-            git tag "$TAG" "${{ github.sha }}" -m "Release ${TAG}"
-            git push origin "$TAG"
-            echo "Created repo tag: ${TAG}"
-          fi
-          echo "repo_version=${NEW}" >> $GITHUB_OUTPUT
-
-  # ─── Publish GitHub Release ───────────────────────────────────────────────────
-  #
-  # Creates a GitHub Release using the build tag once images are published and
-  # semver tags are created. This release event is the trigger for deploy.yml.
-  #
-  # Skipped when docker_publish did not succeed (e.g. workflow failed mid-run).
-  publish_release:
-    name: Publish GitHub Release
-    runs-on: ubuntu-latest
-    needs: [detect_changes, validate_devops, lint, test, docker_publish, tag_release, semver_tag]
-    if: >-
-      always() &&
-      !cancelled() &&
-      needs.detect_changes.result == 'success' &&
-      needs.validate_devops.result == 'success' &&
-      needs.lint.result == 'success' &&
-      needs.test.result == 'success' &&
-      needs.docker_publish.result == 'success' &&
-      needs.tag_release.result == 'success' &&
-      (needs.semver_tag.result == 'success' || needs.semver_tag.result == 'skipped')
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Fetch all tags
-        run: git fetch --tags
-
-      - name: Create GitHub Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          REPO_VERSION="${{ needs.semver_tag.outputs.repo_version }}"
-          RELEASE_TAG="v${REPO_VERSION}"
-
-          # Build release notes listing each bumped bot's new version.
-          NOTES="## Deployed Images\n\nAll images tagged \`:latest\` and \`:main\`.\n"
-          VERSIONED_BOTS=$(echo '${{ needs.detect_changes.outputs.versioned_bots }}' | jq -r '.[]' 2>/dev/null || true)
-          if [ -n "$VERSIONED_BOTS" ]; then
-            NOTES+="\n## Bot Versions\n\n"
-            for BOT in $VERSIONED_BOTS; do
-              VERSION=$(git tag -l "${BOT}/v*" \
-                | grep -E "^${BOT}/v[0-9]+\.[0-9]+\.[0-9]+$" \
-                | sort -V | tail -1 \
-                | sed "s|^${BOT}/v||")
-              [ -n "$VERSION" ] && NOTES+="- \`${BOT}\` → v${VERSION}\n"
+          {
+            echo "NOTES<<RELEASE_EOF"
+            echo "## Docker Images"
+            echo ""
+            for bot in bluebot bunkbot covabot djcova ratbot; do
+              echo "- \`ghcr.io/${OWNER_LC}/starbunk-go-${bot}:${VERSION}\`"
             done
-          fi
+            echo ""
+            echo "## Changes (${RANGE})"
+            echo ""
+            echo "${CHANGES}"
+            echo "RELEASE_EOF"
+          } >> $GITHUB_OUTPUT
 
-          gh release create "$RELEASE_TAG" \
-            --title "$RELEASE_TAG" \
-            --notes "$(printf '%b' "$NOTES")" \
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=${{ needs.version.outputs.version }}
+          gh release create "$VERSION" \
+            --title "$VERSION" \
+            --notes "${{ steps.notes.outputs.NOTES }}" \
             --latest
-          echo "Created release: ${RELEASE_TAG}"
+          echo "Created release: ${VERSION}"

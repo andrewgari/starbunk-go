@@ -15,9 +15,9 @@ augmented (e.g. with an LLM) without restructuring the bot.
 
 ### Strategy pattern
 
-Bot-specific detection logic lives in `internal/bluebot/`. The shared
-dispatcher and interface live in `internal/replybot/` — every reply-style
-bot uses them. The central abstraction is the `Strategy` interface:
+Bot-specific detection logic lives in `cmd/bluebot/` alongside `main.go`.
+The shared dispatcher and interface live in `internal/replybot/` — every
+reply-style bot uses them. The central abstraction is the `Strategy` interface:
 
 ```go
 type Strategy interface {
@@ -49,7 +49,7 @@ triggers. Adding behaviour means adding a `Strategy` — nothing else changes.
 
 ### Pattern coverage
 
-The regex (`bluePattern` in `internal/bluebot/blue.go`) matches:
+The regex (`bluePattern` in `cmd/bluebot/blue.go`) matches:
 
 | Variant | Example |
 |---|---|
@@ -71,8 +71,8 @@ Word boundaries (`\b`) prevent false positives on compound words like
 | `cmd/bluebot/main.go` | Wires `bot.Run`, auditor, and `replybot.NewBot` |
 | `internal/replybot/strategy.go` | `Strategy` interface (shared across all reply bots) |
 | `internal/replybot/bot.go` | `Bot` dispatcher (shared across all reply bots) |
-| `internal/bluebot/blue.go` | `BlueStrategy` — regex trigger + static response |
-| `internal/bluebot/blue_test.go` | Ginkgo specs (25 cases) |
+| `cmd/bluebot/blue.go` | `BlueStrategy` — regex trigger + static response |
+| `cmd/bluebot/blue_test.go` | Ginkgo specs (25 cases) |
 
 ## Dependencies
 
