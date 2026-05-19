@@ -48,8 +48,12 @@ jobs:
           VERSION="${{ github.event.release.tag_name }}"
           if [ -z "$VERSION" ]; then
             VERSION="manual-${SHORT_SHA}"
+            DEPLOY_TAG="latest"
+          else
+            DEPLOY_TAG="${VERSION}"
           fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "deploy_tag=${DEPLOY_TAG}" >> $GITHUB_OUTPUT
 
       - name: Preflight — check required secrets
         env:
@@ -102,7 +106,7 @@ jobs:
             -o StrictHostKeyChecking=accept-new \
             -o ConnectTimeout=30 \
             "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-            "bash -s -- ${{ vars.PROD_DOCKER_COMPOSE_DIR }} latest ${{ steps.deploy_info.outputs.version }} ${{ vars.PROD_DOCKER_COMPOSE_DIR }}/docker-compose.yml.incoming" \
+            "bash -s -- ${{ vars.PROD_DOCKER_COMPOSE_DIR }} ${{ steps.deploy_info.outputs.deploy_tag }} ${{ steps.deploy_info.outputs.version }} ${{ vars.PROD_DOCKER_COMPOSE_DIR }}/docker-compose.yml.incoming" \
             < scripts/deployment/deploy.sh
 
       - name: Health check

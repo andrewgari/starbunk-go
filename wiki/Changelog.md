@@ -5,7 +5,18 @@ Add an entry under today's date for every PR or significant change.
 
 ---
 
-## 2026-05-19
+## 2026-05-19 (3)
+
+- **Fully automated release pipeline**: every merge to `main` now auto-versions,
+  builds, and deploys — no manual `git tag` needed.
+  - `main.yml` bumps semver from conventional commit title (feat→minor,
+    feat!→major, everything else→patch), builds all 5 bots, pushes
+    `:vX.Y.Z` + `:latest` + `:sha-*`, creates git tag + GitHub Release.
+  - `release.yml` deleted — it is no longer needed.
+  - `deploy.yml` now pins Tower to the specific version tag (`:vX.Y.Z`)
+    rather than always pulling `:latest`.
+
+## 2026-05-19 (2)
 
 - **Compose/deploy audit guidance added to AGENTS.md**: added "Image tag chain
   audit" checklist to the DevOps maintenance section, requiring agents to

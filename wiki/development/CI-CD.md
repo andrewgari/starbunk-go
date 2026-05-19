@@ -9,52 +9,43 @@ Triggered on all PRs to `main`. Jobs:
 1. **Validate DevOps Consistency** — runs `scripts/devops-validate.sh`; fails fast if any bot is not registered in all required files.
 2. **Lint** — runs `golangci-lint`.
 3. **Test** — runs `go vet` and `go test ./...`.
-4. **Build** — matrix build; builds each bot binary to verify compilation.
-5. **Docker Test** — builds each Docker image to verify the Dockerfile.
+4. **Build** — matrix build; builds each changed bot binary to verify compilation.
+5. **Docker Test** — builds each changed Docker image to verify the Dockerfile.
 
 All five jobs are required to pass before a PR can merge.
 
-### `main.yml` — Merge to Main
+### `main.yml` — Merge to Main (auto-release)
 
-Triggered on push to `main`. Publishes continuous integration images but does **not** create a release or deploy to Tower. Jobs:
+Triggered on every push to `main`. This is the only workflow that creates releases
+and deploys to Tower — **every merge automatically ships**. Jobs:
 
-1. **Detect Changed Bots** — determines which bots need rebuilding.
-2. **Validate DevOps Consistency**
-3. **Lint**
-4. **Test**
-5. **Docker Publish** — builds and pushes `:main` and `:sha-*` images to GHCR for changed bots.
-6. **Tag Release** — creates a `build-YYYYMMDD-sha` git tag as a breadcrumb.
-
-### `release.yml` — Tag Push (Release)
-
-Triggered when a `v*` tag is pushed to the repo (e.g., `git tag v1.3.0 && git push origin v1.3.0`). This is the only workflow that deploys to Tower. Jobs:
-
-1. **Validate Tag** — confirms the tag points to a commit on `main` and that no release for this version already exists.
+1. **Validate DevOps Consistency**
 2. **Lint**
 3. **Test**
-4. **Docker Release** — builds all five bots, pushes `:v1.3.0` and `:latest` images to GHCR.
-5. **Publish Release** — creates a GitHub Release, which triggers `deploy.yml`.
+4. **Determine Version** — reads the last `v*` git tag and the merge commit title
+   to compute the next semver (major/minor/patch via conventional commits).
+5. **Docker Publish** — builds all five bots in parallel; pushes `:vX.Y.Z`,
+   `:latest`, and `:sha-<short-sha>` to GHCR.
+6. **Create Release** — creates a `vX.Y.Z` git tag and GitHub Release, which
+   triggers `deploy.yml` automatically.
 
 ### `deploy.yml` — Deploy to Tower
 
-Triggered automatically when a GitHub Release is published (i.e., after `release.yml` completes). See [[../infrastructure/Deployment|Deployment]].
+Triggered automatically when a GitHub Release is published (i.e., after `main.yml`
+completes). Tower deploys `:vX.Y.Z` (the specific version that was just released).
+See [[../infrastructure/Deployment|Deployment]].
 
 ---
 
-## Release workflow
+## Version bump rules
 
-```bash
-# Merge PRs to main normally — nothing deploys automatically.
+The `version` job reads the merge commit title (conventional commits):
 
-# When you're ready to ship:
-git checkout main && git pull
-git tag v1.3.0 -m "Release v1.3.0"
-git push origin v1.3.0
-# → release.yml runs → images pushed → GitHub Release created → Tower deploys
-```
-
-Pre-release tags (e.g., `v1.3.0-rc.1`) are supported — they publish images but
-mark the GitHub Release as a pre-release and do not update `:latest`.
+| Commit title | Bump |
+|---|---|
+| `feat!:` or body contains `BREAKING CHANGE` | major |
+| `feat:` | minor |
+| `fix:`, `chore:`, `refactor:`, anything else | patch |
 
 ---
 

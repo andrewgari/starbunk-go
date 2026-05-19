@@ -1,73 +1,64 @@
 # Versioning
 
-Versions in starbunk-go are **explicit git tags** pushed by the developer.
-The pipeline reacts to those tags — it does not invent versions automatically.
+Versions in starbunk-go are determined **automatically** on every merge to `main`.
+The pipeline reads the conventional commit title, bumps the appropriate part of
+the last semver tag, builds all bot images, and deploys — no manual tagging needed.
 
 ---
 
-## Release flow
+## How it works
 
-```bash
-git checkout main && git pull
-git tag v1.3.0 -m "Release v1.3.0"
-git push origin v1.3.0
+Merge a PR to `main` with a conventional commit title:
+
+```
+feat(ratbot): add opt-out command
 ```
 
-Pushing the tag triggers `release.yml`, which:
+The pipeline:
+1. Reads the last `v*` tag from git (e.g., `v1.2.3`).
+2. Determines the bump type from the commit title.
+3. Builds all five bot images → pushes `:v1.3.0`, `:latest`, `:sha-<sha>`.
+4. Creates git tag `v1.3.0` and a GitHub Release.
+5. `deploy.yml` fires → Tower deploys `:v1.3.0`.
 
-1. Validates the tag points to a commit on `main`.
-2. Runs lint and tests.
-3. Builds all five bot images, pushes `:v1.3.0` and `:latest` to GHCR.
-4. Creates a GitHub Release (which triggers Tower deployment via `deploy.yml`).
+That's it. No `git tag`, no `git push --tags`.
+
+---
+
+## Bump type
+
+| Commit title pattern | Bump | Example |
+|---|---|---|
+| `feat!:` / `BREAKING CHANGE` in body | major | `v1.3.0` → `v2.0.0` |
+| `feat:` | minor | `v1.3.0` → `v1.4.0` |
+| anything else (`fix:`, `chore:`, `refactor:`, etc.) | patch | `v1.3.0` → `v1.3.1` |
 
 ---
 
 ## Tag format
 
-Repo-level semver tags:
-
 ```
 v<MAJOR>.<MINOR>.<PATCH>
 ```
 
-Examples: `v1.2.3`, `v0.3.0`, `v1.0.0-rc.1`
+Examples: `v1.2.3`, `v0.3.0`, `v1.0.0`
 
-Per-bot tags (legacy, from pre-2026-05 pipeline) also exist in the tag history
-(`bluebot/v0.2.4` etc.) but are no longer created by the new release workflow.
-
----
-
-## Pre-release tags
-
-Tags with a hyphen suffix are treated as pre-releases:
-
-```bash
-git tag v1.3.0-rc.1 -m "Release candidate"
-git push origin v1.3.0-rc.1
-```
-
-- Images are tagged `:v1.3.0-rc.1` but **not** `:latest`.
-- The GitHub Release is marked `--prerelease`.
-- `deploy.yml` still fires (a pre-release event is still `published`), but
-  `deploy.yml` passes `latest` as the image tag, so **Tower continues running
-  the previous stable `:latest` image** — it does _not_ pull `:v1.3.0-rc.1`.
-  To test an RC on Tower you must set `IMAGE_TAG=v1.3.0-rc.1` in `stack.env`
-  and restart services manually.
+Per-bot tags (legacy, from pre-2026-05 pipeline) still exist in git history
+(`bluebot/v0.2.4` etc.) but are no longer created by the pipeline.
 
 ---
 
 ## Docker image tags
 
-| Tag | Set by | Meaning |
-|---|---|---|
-| `:latest` | `release.yml` only | Most recent stable release |
-| `:v<MAJOR>.<MINOR>.<PATCH>` | `release.yml` | Specific versioned release |
-| `:main` | `main.yml` | Current HEAD of `main` (not deployed) |
-| `:sha-<content-hash>` | `main.yml` / `release.yml` | Content-addressed; unchanged if source didn't change |
-| `:sha-<short-sha>` | `main.yml` | Commit SHA |
+| Tag | Meaning |
+|---|---|
+| `:latest` | Most recent release (what Tower runs by default) |
+| `:v<MAJOR>.<MINOR>.<PATCH>` | Specific versioned release — Tower pins to this on deploy |
+| `:sha-<short-sha>` | Commit SHA — useful for debugging |
 
-Tower's `docker-compose.yml` uses `${IMAGE_TAG:-latest}`, so it runs the
-last explicitly released version by default.
+`docker-compose.yml` uses `${IMAGE_TAG:-latest}`. On each deploy, Tower sets
+`IMAGE_TAG` to the specific version tag (e.g., `v1.3.0`), so deploys are always
+pinned to the exact image that was built and tested.
 
 ---
 
@@ -75,7 +66,7 @@ last explicitly released version by default.
 
 ```bash
 # Latest release tag
-git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | grep -vE -- '-' | sort -V | tail -1
+git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1
 
 # All release tags
 git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | sort -V

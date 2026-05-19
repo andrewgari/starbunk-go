@@ -127,7 +127,7 @@ Run the validation after any task involving:
 
 ### Image tag chain audit — required when editing release or deploy workflows
 
-When touching `.github/workflows/release.yml`, `deploy.yml`, `main.yml`, or
+When touching `.github/workflows/deploy.yml`, `main.yml`, or
 `scripts/deployment/deploy.sh`, **manually verify the full image tag chain**:
 
 1. **Workflow → GHCR**: confirm the image names built/pushed in the workflow
@@ -207,9 +207,9 @@ In Docker Compose, each service resolves its token as `${BOTNAME_TOKEN:-${STARBU
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `ci.yml` | PRs to `main` | Validate DevOps consistency, go vet, go test, build each bot binary |
-| `main.yml` | Merge to `main` | Validate DevOps consistency, test, build+push Docker images to GHCR, tag `:latest`, create git build tag |
-| `deploy.yml` | After `main.yml` succeeds | Tailscale SSH to Tower, stage new compose file, pull images, restart services, health check |
+| `ci.yml` | PRs to `main` | Validate DevOps consistency, go vet, go test, build each changed bot binary + Docker smoke test |
+| `main.yml` | Merge to `main` | Lint, test, auto-bump semver from conventional commit, build+push all 5 bot images (`:vX.Y.Z` `:latest` `:sha-*`), create git tag + GitHub Release → triggers deploy |
+| `deploy.yml` | GitHub Release published | Tailscale SSH to Tower, stage new compose file, pull images (pinned to `:vX.Y.Z`), restart services, health check |
 
 GHCR image names follow the pattern `ghcr.io/andrewgari/starbunk-go-<bot>:<tag>`.
 
