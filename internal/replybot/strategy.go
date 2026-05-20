@@ -51,11 +51,11 @@ type ConditionedStrategy interface {
 }
 
 // IdentifiedStrategy is an optional extension of Strategy for bots that want
-// to respond as a custom persona via webhook. When a strategy implements this
-// interface, Bot.Handle calls Identity after ShouldTrigger returns true. If
-// Identity returns useWebhook == true the response is sent via SendAs;
-// otherwise it falls through to a plain Send.
+// to respond as a named persona. When a strategy implements this interface,
+// Bot.Handle calls Identity after ShouldTrigger returns true and passes the
+// result to MessageService.SendMessageWithIdentity — the service decides how
+// to deliver the message (webhook, direct API, etc.).
 type IdentifiedStrategy interface {
 	Strategy
-	Identity(ctx context.Context, msg *discordgo.MessageCreate) (id discord.Identity, useWebhook bool)
+	Identity(ctx context.Context, msg *discordgo.MessageCreate) discord.Identity
 }

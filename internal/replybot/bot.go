@@ -32,9 +32,9 @@ func NewBot(sender discord.MessageService, strategies ...Strategy) *Bot {
 // every strategy call so that async implementations (e.g. LLM providers) can
 // respect cancellation and deadlines.
 //
-// If the matched strategy also implements IdentifiedStrategy and returns
-// useWebhook == true, the response is sent via SendAs (webhook persona);
-// otherwise it is sent as a plain direct message.
+// If the matched strategy also implements IdentifiedStrategy, the response is
+// sent via SendMessageWithIdentity — the MessageService decides the transport.
+// Otherwise the response is sent via SendMessage (bot's own identity).
 func (b *Bot) Handle(ctx context.Context, s *discordgo.Session, m *discordgo.MessageCreate) {
 	for _, strategy := range b.strategies {
 		if cs, ok := strategy.(ConditionedStrategy); ok {
@@ -49,22 +49,18 @@ func (b *Bot) Handle(ctx context.Context, s *discordgo.Session, m *discordgo.Mes
 		resp := strategy.Response(ctx, m)
 
 		if identified, ok := strategy.(IdentifiedStrategy); ok {
-			if id, useWebhook := identified.Identity(ctx, m); useWebhook {
-				if _, err := b.sender.SendAs(m.ChannelID, discord.WebhookMessage{
-					Identity: id,
-					Content:  resp,
-				}); err != nil {
-					slog.Error("replybot: failed to send webhook response",
-						"strategy", strategy.Name(),
-						"channel", m.ChannelID,
-						"err", err,
-					)
-				}
-				return
+			id := identified.Identity(ctx, m)
+			if _, err := b.sender.SendMessageWithIdentity(m.ChannelID, resp, id); err != nil {
+				slog.Error("replybot: failed to send identified response",
+					"strategy", strategy.Name(),
+					"channel", m.ChannelID,
+					"err", err,
+				)
 			}
+			return
 		}
 
-		if _, err := b.sender.Send(m.ChannelID, discord.DirectMessage{Content: resp}); err != nil {
+		if _, err := b.sender.SendMessage(m.ChannelID, resp); err != nil {
 			slog.Error("replybot: failed to send response",
 				"strategy", strategy.Name(),
 				"channel", m.ChannelID,

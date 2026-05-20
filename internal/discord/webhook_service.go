@@ -7,10 +7,12 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// WebhookService executes Discord webhook payloads. It owns the full lifecycle
-// of per-channel webhooks: creation, caching, and execution.
+// WebhookService executes webhook payloads on behalf of MessageService.
+// It owns the full lifecycle of per-channel webhooks: creation, caching, and
+// execution. This interface is intentionally unexported — callers interact
+// with MessageService; WebhookService is an implementation detail.
 type WebhookService interface {
-	Execute(channelID string, msg WebhookMessage) (*discordgo.Message, error)
+	Execute(channelID, content string, id Identity) (*discordgo.Message, error)
 }
 
 type discordWebhookService struct {
@@ -26,10 +28,11 @@ func newDiscordWebhookService(s *discordgo.Session) WebhookService {
 	}
 }
 
-// Execute sends msg via the channel's bot-owned webhook. It validates that
-// msg.Identity is non-zero before making any Discord API calls.
-func (ws *discordWebhookService) Execute(channelID string, msg WebhookMessage) (*discordgo.Message, error) {
-	if !msg.Identity.IsValid() {
+// Execute sends content via the channel's bot-owned webhook under id.
+// Identity must be valid (Username and AvatarURL non-empty); an invalid
+// identity returns an error without making any Discord API calls.
+func (ws *discordWebhookService) Execute(channelID, content string, id Identity) (*discordgo.Message, error) {
+	if !id.IsValid() {
 		return nil, fmt.Errorf("webhook: Identity.Username and Identity.AvatarURL are required")
 	}
 
@@ -39,9 +42,9 @@ func (ws *discordWebhookService) Execute(channelID string, msg WebhookMessage) (
 	}
 
 	params := &discordgo.WebhookParams{
-		Content:   msg.Content,
-		Username:  msg.Identity.Username,
-		AvatarURL: msg.Identity.AvatarURL,
+		Content:   content,
+		Username:  id.Username,
+		AvatarURL: id.AvatarURL,
 	}
 
 	return ws.session.WebhookExecute(webhook.ID, webhook.Token, true, params)

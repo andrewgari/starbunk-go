@@ -39,23 +39,25 @@ starbunk-go/
 
 Three single-responsibility layers:
 
-- **`Identity` / `IdentityProvider`** — persona model. `Identity{Username, Nickname, AvatarURL}` is required for any webhook send. `DiscordIdentityProvider` resolves live Discord identities, preferring guild-member details over global user details.
+- **`Identity` / `IdentityProvider`** — first-class persona concept. `Identity{Username, Nickname, AvatarURL}` belongs to any message, not just webhook sends. `DiscordIdentityProvider` resolves live Discord identities, preferring guild-member details over global user details.
 
-- **`WebhookService`** — manages per-channel Discord webhook lifecycle (creation, caching) and executes `WebhookMessage` payloads. `WebhookMessage.Identity` is required and validated at send time; a zero-value identity returns an error.
+- **`WebhookService`** — internal implementation detail; callers never use it directly. Manages per-channel webhook lifecycle (creation, double-checked locking cache, execution). Identity validation happens here before any Discord API call.
 
-- **`MessageService`** — high-level send interface. `NewMessageService(s)` returns an implementation that delegates `Send` (direct API) and `SendAs` (webhook) to the appropriate layer. Implementations are fully swappable via injection.
+- **`MessageService`** — the only caller-facing send API. Callers say *what* to send and *as whom*; the implementation decides how to deliver it (direct API vs webhook). `NewMessageService(s)` wires all layers internally.
 
   ```go
   type MessageService interface {
-      Send(channelID string, msg DirectMessage) (*discordgo.Message, error)
-      SendAs(channelID string, msg WebhookMessage) (*discordgo.Message, error)
-      Reply(channelID, messageID string, msg DirectMessage) (*discordgo.Message, error)
+      // Bot's own identity — admin, errors, ephemeral messages
+      SendMessage(channelID, content string) (*discordgo.Message, error)
+      // Caller-provided identity — service decides transport
+      SendMessageWithIdentity(channelID, content string, id Identity) (*discordgo.Message, error)
+      Reply(channelID, messageID, content string) (*discordgo.Message, error)
       Edit(channelID, messageID, content string) (*discordgo.Message, error)
       Delete(channelID, messageID string) error
   }
   ```
 
-  Message types are distinct by design — `DirectMessage` carries no identity field (compile-time enforcement), `WebhookMessage` requires one.
+  `SendMessage` always uses the direct Discord API (no persona). `SendMessageWithIdentity` delegates to `WebhookService` — the caller never thinks about webhooks.
 
 ### `internal/middleware`
 
@@ -120,14 +122,14 @@ func main() {
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
     // Audit has already passed. No guard needed here.
     sender := discord.NewMessageService(s)
-    sender.Send(m.ChannelID, discord.DirectMessage{Content: "response"})
-}
 
-// To send as a custom persona via webhook:
-sender.SendAs(m.ChannelID, discord.WebhookMessage{
-    Identity: discord.Identity{Username: "CustomName", AvatarURL: "https://..."},
-    Content:  "response",
-})
+    // Send as the bot itself (admin, errors, simple replies):
+    sender.SendMessage(m.ChannelID, "response")
+
+    // Send as a named persona (service handles transport internally):
+    id := discord.Identity{Username: "CustomName", AvatarURL: "https://..."}
+    sender.SendMessageWithIdentity(m.ChannelID, "response", id)
+}
 ```
 
 ## Discord Intents

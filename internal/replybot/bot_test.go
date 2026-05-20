@@ -57,30 +57,28 @@ type stubSender struct {
 	lastChannel  string
 	lastContent  string
 	lastIdentity discord.Identity
-	wasWebhook   bool
+	wasIdentity  bool // true when last call was SendMessageWithIdentity
 	callCount    int
 }
 
-func (s *stubSender) Send(channelID string, msg discord.DirectMessage) (*discordgo.Message, error) {
+func (s *stubSender) SendMessage(channelID, content string) (*discordgo.Message, error) {
 	s.lastChannel = channelID
-	s.lastContent = msg.Content
-	s.wasWebhook = false
+	s.lastContent = content
+	s.wasIdentity = false
 	s.callCount++
 	return &discordgo.Message{}, nil
 }
-func (s *stubSender) SendAs(channelID string, msg discord.WebhookMessage) (*discordgo.Message, error) {
+func (s *stubSender) SendMessageWithIdentity(channelID, content string, id discord.Identity) (*discordgo.Message, error) {
 	s.lastChannel = channelID
-	s.lastContent = msg.Content
-	s.lastIdentity = msg.Identity
-	s.wasWebhook = true
+	s.lastContent = content
+	s.lastIdentity = id
+	s.wasIdentity = true
 	s.callCount++
 	return &discordgo.Message{}, nil
 }
-func (s *stubSender) Reply(_, _ string, _ discord.DirectMessage) (*discordgo.Message, error) {
-	return nil, nil
-}
-func (s *stubSender) Edit(_, _, _ string) (*discordgo.Message, error) { return nil, nil }
-func (s *stubSender) Delete(_, _ string) error                        { return nil }
+func (s *stubSender) Reply(_, _, _ string) (*discordgo.Message, error) { return nil, nil }
+func (s *stubSender) Edit(_, _, _ string) (*discordgo.Message, error)  { return nil, nil }
+func (s *stubSender) Delete(_, _ string) error                         { return nil }
 
 // Verify stubSender satisfies MessageService at compile time.
 var _ discord.MessageService = (*stubSender)(nil)
@@ -102,15 +100,14 @@ func (s *stubStrategy) Response(_ context.Context, _ *discordgo.MessageCreate) s
 	return s.response
 }
 
-// stubIdentifiedStrategy extends stubStrategy with persona webhook support.
+// stubIdentifiedStrategy extends stubStrategy with persona identity support.
 type stubIdentifiedStrategy struct {
 	stubStrategy
-	identity   discord.Identity
-	useWebhook bool
+	identity discord.Identity
 }
 
-func (s *stubIdentifiedStrategy) Identity(_ context.Context, _ *discordgo.MessageCreate) (discord.Identity, bool) {
-	return s.identity, s.useWebhook
+func (s *stubIdentifiedStrategy) Identity(_ context.Context, _ *discordgo.MessageCreate) discord.Identity {
+	return s.identity
 }
 
 // — specs —
@@ -141,7 +138,7 @@ var _ = Describe("Bot.Handle", func() {
 
 			bot.Handle(context.Background(), sess, build(authorID("u"), withContent("ping"), inGuild("g")))
 			Expect(sender.lastContent).To(Equal("pong"))
-			Expect(sender.wasWebhook).To(BeFalse())
+			Expect(sender.wasIdentity).To(BeFalse())
 		})
 
 		It("stops after the first match (first-match-wins)", func() {
@@ -247,32 +244,27 @@ var _ = Describe("Bot.Handle", func() {
 		})
 	})
 
-	Context("IdentifiedStrategy — webhook persona sends", func() {
-		It("sends via SendAs when strategy returns useWebhook == true", func() {
+	Context("IdentifiedStrategy — persona sends", func() {
+		It("sends via SendMessageWithIdentity when strategy provides an identity", func() {
 			persona := discord.Identity{Username: "TestBot", AvatarURL: "https://example.com/avatar.png"}
 			s1 := &stubIdentifiedStrategy{
 				stubStrategy: stubStrategy{name: "persona", triggerResult: true, response: "hello as persona"},
 				identity:     persona,
-				useWebhook:   true,
 			}
 			bot := replybot.NewBot(sender, s1)
 
 			bot.Handle(context.Background(), sess, build(authorID("u")))
-			Expect(sender.wasWebhook).To(BeTrue())
+			Expect(sender.wasIdentity).To(BeTrue())
 			Expect(sender.lastContent).To(Equal("hello as persona"))
 			Expect(sender.lastIdentity).To(Equal(persona))
 		})
 
-		It("sends via Send (direct) when strategy returns useWebhook == false", func() {
-			s1 := &stubIdentifiedStrategy{
-				stubStrategy: stubStrategy{name: "no-webhook", triggerResult: true, response: "plain message"},
-				identity:     discord.Identity{Username: "TestBot", AvatarURL: "https://example.com/avatar.png"},
-				useWebhook:   false,
-			}
+		It("sends via SendMessage when strategy does not implement IdentifiedStrategy", func() {
+			s1 := &stubStrategy{name: "plain", triggerResult: true, response: "plain message"}
 			bot := replybot.NewBot(sender, s1)
 
 			bot.Handle(context.Background(), sess, build(authorID("u")))
-			Expect(sender.wasWebhook).To(BeFalse())
+			Expect(sender.wasIdentity).To(BeFalse())
 			Expect(sender.lastContent).To(Equal("plain message"))
 		})
 	})
