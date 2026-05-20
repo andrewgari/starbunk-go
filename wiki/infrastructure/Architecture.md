@@ -41,7 +41,11 @@ Three single-responsibility layers:
 
 - **`Identity` / `IdentityProvider`** — first-class persona concept. `Identity{Username, Nickname, AvatarURL}` belongs to any message, not just webhook sends. `DiscordIdentityProvider` resolves live Discord identities, preferring guild-member details over global user details.
 
-- **`WebhookService`** — internal implementation detail; callers never use it directly. Manages per-channel webhook lifecycle (creation, double-checked locking cache, execution). Identity validation happens here before any Discord API call.
+- **`WebhookService`** — internal implementation detail; callers never use it directly. Manages the full lifecycle of per-channel webhooks:
+  - Lazily creates a webhook named `"Starbunk Webhook"` on first use (found by name, not by owner — all bots share one slot per channel, well within Discord's 15-webhook-per-channel limit).
+  - Caches entries in a `channelID → {webhook, lastUsed}` registry.
+  - Background reaper (every 1 minute) deletes webhooks idle longer than 5 minutes.
+  - `Close()` stops the reaper and immediately deletes all owned webhooks for a clean shutdown.
 
 - **`MessageService`** — the only caller-facing send API. Callers say *what* to send and *as whom*; the implementation decides how to deliver it (direct API vs webhook). `NewMessageService(s)` wires all layers internally.
 
@@ -54,6 +58,8 @@ Three single-responsibility layers:
       Reply(channelID, messageID, content string) (*discordgo.Message, error)
       Edit(channelID, messageID, content string) (*discordgo.Message, error)
       Delete(channelID, messageID string) error
+      // Close releases webhook resources; call on bot shutdown
+      Close() error
   }
   ```
 

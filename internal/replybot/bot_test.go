@@ -79,6 +79,7 @@ func (s *stubSender) SendMessageWithIdentity(channelID, content string, id disco
 func (s *stubSender) Reply(_, _, _ string) (*discordgo.Message, error) { return nil, nil }
 func (s *stubSender) Edit(_, _, _ string) (*discordgo.Message, error)  { return nil, nil }
 func (s *stubSender) Delete(_, _ string) error                         { return nil }
+func (s *stubSender) Close() error                                     { return nil }
 
 // Verify stubSender satisfies MessageService at compile time.
 var _ discord.MessageService = (*stubSender)(nil)

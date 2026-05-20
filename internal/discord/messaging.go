@@ -27,6 +27,11 @@ type MessageService interface {
 
 	// Delete removes a message.
 	Delete(channelID, messageID string) error
+
+	// Close releases resources held by the service. For the real implementation
+	// this stops the webhook reaper and deletes all owned webhooks. Call on
+	// bot shutdown for a clean Discord state.
+	Close() error
 }
 
 type discordMessageService struct {
@@ -65,4 +70,8 @@ func (ms *discordMessageService) Edit(channelID, messageID, content string) (*di
 
 func (ms *discordMessageService) Delete(channelID, messageID string) error {
 	return ms.session.ChannelMessageDelete(channelID, messageID)
+}
+
+func (ms *discordMessageService) Close() error {
+	return ms.webhooks.Close()
 }
