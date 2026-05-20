@@ -5,24 +5,23 @@ Add an entry under today's date for every PR or significant change.
 
 ---
 
-## 2026-05-20 — Messaging & Identity Architecture Refactor
+## 2026-05-20 — Messaging & Identity Architecture Refactor (#21)
 
 ### Added
-- `internal/discord/identity.go` — `Identity`, `IdentityProvider`, `DiscordIdentityProvider` moved here from `internal/bot`; canonical home for persona types.
-- `internal/discord/messages.go` — `DirectMessage` and `WebhookMessage` as distinct typed structs; identity is compile-time enforced (only `WebhookMessage` carries an `Identity` field).
-- `internal/discord/webhook_service.go` — `WebhookService` interface with `discordWebhookService` implementation: per-channel webhook creation, double-checked locking cache, and `WebhookExecute` delegation.
-- `replybot.IdentifiedStrategy` — optional extension of `Strategy`; when implemented, the Bot dispatcher routes responses to `SendAs` (webhook persona) if `useWebhook == true`.
+- `internal/discord/identity.go` — `Identity`, `IdentityProvider`, `DiscordIdentityProvider` moved here from `internal/bot`; canonical home for persona types, decoupled from transport.
+- `internal/discord/webhook_service.go` — `WebhookService` (internal): per-channel webhook lifecycle with lazy creation, in-memory registry, TTL reaper (5 min idle → delete), and `Close()` for clean shutdown. Webhooks are found by name (`"Starbunk Webhook"`) so all bots share one slot per channel.
+- `replybot.IdentifiedStrategy` — optional `Strategy` extension. When a strategy implements it, `Identity(ctx, msg) discord.Identity` is called and the response is routed to `SendMessageWithIdentity`; the service decides transport.
 
 ### Changed
-- `internal/discord/messaging.go` — `MessagingService` replaced by `MessageService` (`Send`, `SendAs`, `Reply`, `Edit`, `Delete`). `NewMessageService` replaces `NewMessagingService`.
-- `internal/replybot/bot.go` — sender type updated to `discord.MessageService`; `Handle` checks for `IdentifiedStrategy` and dispatches via `SendAs` when appropriate.
-- `internal/replybot/bot_test.go` — `stubSender` rewritten to `discord.MessageService`; new specs cover `IdentifiedStrategy` webhook-dispatch and direct-fallback paths.
-- All 5 bot `cmd/*/main.go` files migrated to `NewMessageService` / `Send` with `DirectMessage`.
-- `wiki/infrastructure/Architecture.md` updated to reflect the new three-layer design.
+- `internal/discord/messaging.go` — `MessagingService` replaced by `MessageService`: `SendMessage` (bot's own identity, direct API), `SendMessageWithIdentity` (caller-provided identity, service routes via webhook), `Reply`, `Edit`, `Delete`, `Close`. `NewMessageService` replaces `NewMessagingService`.
+- `internal/replybot/bot.go` — sender type updated to `discord.MessageService`; `Handle` checks for `IdentifiedStrategy` and dispatches via `SendMessageWithIdentity` when the strategy provides an identity.
+- `internal/replybot/bot_test.go` — `stubSender` rewritten to satisfy `discord.MessageService`; new specs cover `IdentifiedStrategy` persona-send and plain-send paths.
+- All 5 bot `cmd/*/main.go` migrated to `NewMessageService` / `SendMessage(ch, content)`.
+- `wiki/infrastructure/Architecture.md` updated to reflect the three-layer design.
 
 ### Removed
-- `internal/bot/identity.go` — deleted; all types now live in `internal/discord`.
-- `discord.MessagingService`, `NewMessagingService`, `SendMessageWithIdentity`, `SendComplexMessage`, `ReplyMessage`, `EditMessage`, `DeleteMessage` — replaced by `MessageService` API.
+- `internal/bot/identity.go` — deleted; types live in `internal/discord`.
+- `discord.MessagingService`, `NewMessagingService`, `SendComplexMessage`, `ReplyMessage`, `EditMessage`, `DeleteMessage` — replaced by `MessageService` API.
 
 ---
 
