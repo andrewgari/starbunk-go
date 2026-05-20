@@ -20,7 +20,7 @@ func main() {
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Content == "ping bunkbot" {
-		sender := discord.NewMessagingService(s)
+		sender := discord.NewMessageService(s)
 		if _, err := sender.SendMessage(m.ChannelID, "Pong from bunkbot!"); err != nil {
 			slog.Error("failed to send message", "bot", "bunkbot", "err", err)
 		}

@@ -14,6 +14,7 @@ package replybot
 import (
 	"context"
 
+	"github.com/andrewgari/starbunk-go/internal/discord"
 	"github.com/andrewgari/starbunk-go/internal/middleware"
 	"github.com/bwmarrin/discordgo"
 )
@@ -47,4 +48,14 @@ type Strategy interface {
 type ConditionedStrategy interface {
 	Strategy
 	Condition() middleware.MessageAuditor
+}
+
+// IdentifiedStrategy is an optional extension of Strategy for bots that want
+// to respond as a named persona. When a strategy implements this interface,
+// Bot.Handle calls Identity after ShouldTrigger returns true and passes the
+// result to MessageService.SendMessageWithIdentity — the service decides how
+// to deliver the message (webhook, direct API, etc.).
+type IdentifiedStrategy interface {
+	Strategy
+	Identity(ctx context.Context, msg *discordgo.MessageCreate) discord.Identity
 }

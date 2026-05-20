@@ -52,31 +52,37 @@ func inGuild(id string) msgOpt {
 	return func(m *discordgo.MessageCreate) { m.GuildID = id }
 }
 
-// stubSender captures the channel and content of the most recent SendMessage call.
+// stubSender captures the most recent send call for assertions.
 type stubSender struct {
-	lastChannel string
-	lastContent string
-	callCount   int
+	lastChannel  string
+	lastContent  string
+	lastIdentity discord.Identity
+	wasIdentity  bool // true when last call was SendMessageWithIdentity
+	callCount    int
 }
 
 func (s *stubSender) SendMessage(channelID, content string) (*discordgo.Message, error) {
 	s.lastChannel = channelID
 	s.lastContent = content
+	s.wasIdentity = false
 	s.callCount++
 	return &discordgo.Message{}, nil
 }
-func (s *stubSender) SendComplexMessage(_ string, _ *discordgo.MessageSend) (*discordgo.Message, error) {
-	return nil, nil
+func (s *stubSender) SendMessageWithIdentity(channelID, content string, id discord.Identity) (*discordgo.Message, error) {
+	s.lastChannel = channelID
+	s.lastContent = content
+	s.lastIdentity = id
+	s.wasIdentity = true
+	s.callCount++
+	return &discordgo.Message{}, nil
 }
-func (s *stubSender) ReplyMessage(_, _, _ string) (*discordgo.Message, error) { return nil, nil }
-func (s *stubSender) SendMessageWithIdentity(_, _, _, _ string) (*discordgo.Message, error) {
-	return nil, nil
-}
-func (s *stubSender) EditMessage(_, _, _ string) (*discordgo.Message, error) { return nil, nil }
-func (s *stubSender) DeleteMessage(_, _ string) error                        { return nil }
+func (s *stubSender) Reply(_, _, _ string) (*discordgo.Message, error) { return nil, nil }
+func (s *stubSender) Edit(_, _, _ string) (*discordgo.Message, error)  { return nil, nil }
+func (s *stubSender) Delete(_, _ string) error                         { return nil }
+func (s *stubSender) Close() error                                     { return nil }
 
-// Verify stubSender satisfies MessagingService at compile time.
-var _ discord.MessagingService = (*stubSender)(nil)
+// Verify stubSender satisfies MessageService at compile time.
+var _ discord.MessageService = (*stubSender)(nil)
 
 // stubStrategy records calls and returns a configurable trigger result.
 type stubStrategy struct {
@@ -93,6 +99,16 @@ func (s *stubStrategy) ShouldTrigger(_ context.Context, _ *discordgo.MessageCrea
 }
 func (s *stubStrategy) Response(_ context.Context, _ *discordgo.MessageCreate) string {
 	return s.response
+}
+
+// stubIdentifiedStrategy extends stubStrategy with persona identity support.
+type stubIdentifiedStrategy struct {
+	stubStrategy
+	identity discord.Identity
+}
+
+func (s *stubIdentifiedStrategy) Identity(_ context.Context, _ *discordgo.MessageCreate) discord.Identity {
+	return s.identity
 }
 
 // — specs —
@@ -123,6 +139,7 @@ var _ = Describe("Bot.Handle", func() {
 
 			bot.Handle(context.Background(), sess, build(authorID("u"), withContent("ping"), inGuild("g")))
 			Expect(sender.lastContent).To(Equal("pong"))
+			Expect(sender.wasIdentity).To(BeFalse())
 		})
 
 		It("stops after the first match (first-match-wins)", func() {
@@ -225,6 +242,31 @@ var _ = Describe("Bot.Handle", func() {
 			// Other user → condition passes
 			bot.Handle(context.Background(), sess, build(authorID("other-user")))
 			Expect(s1.triggerCalls).To(Equal(1))
+		})
+	})
+
+	Context("IdentifiedStrategy — persona sends", func() {
+		It("sends via SendMessageWithIdentity when strategy provides an identity", func() {
+			persona := discord.Identity{Username: "TestBot", AvatarURL: "https://example.com/avatar.png"}
+			s1 := &stubIdentifiedStrategy{
+				stubStrategy: stubStrategy{name: "persona", triggerResult: true, response: "hello as persona"},
+				identity:     persona,
+			}
+			bot := replybot.NewBot(sender, s1)
+
+			bot.Handle(context.Background(), sess, build(authorID("u")))
+			Expect(sender.wasIdentity).To(BeTrue())
+			Expect(sender.lastContent).To(Equal("hello as persona"))
+			Expect(sender.lastIdentity).To(Equal(persona))
+		})
+
+		It("sends via SendMessage when strategy does not implement IdentifiedStrategy", func() {
+			s1 := &stubStrategy{name: "plain", triggerResult: true, response: "plain message"}
+			bot := replybot.NewBot(sender, s1)
+
+			bot.Handle(context.Background(), sess, build(authorID("u")))
+			Expect(sender.wasIdentity).To(BeFalse())
+			Expect(sender.lastContent).To(Equal("plain message"))
 		})
 	})
 })

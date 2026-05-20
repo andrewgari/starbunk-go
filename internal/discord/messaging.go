@@ -1,81 +1,77 @@
 package discord
 
 import (
-	"fmt"
-
 	"github.com/bwmarrin/discordgo"
 )
 
-// MessagingService defines operations for interacting with Discord messages.
-type MessagingService interface {
+// MessageService is the caller-facing send API. Callers declare *what* to send
+// and *as whom*; the implementation decides how to deliver it (direct API vs
+// webhook). Implementations are swappable — inject a stub in tests, the real
+// discordMessageService in production.
+type MessageService interface {
+	// SendMessage sends content as the bot's own identity.
+	// Use for admin, moderation, error, and ephemeral messages where
+	// visuals and persona do not matter.
 	SendMessage(channelID, content string) (*discordgo.Message, error)
-	SendComplexMessage(channelID string, data *discordgo.MessageSend) (*discordgo.Message, error)
-	ReplyMessage(channelID, messageID, content string) (*discordgo.Message, error)
-	SendMessageWithIdentity(channelID, content, username, avatarURL string) (*discordgo.Message, error)
-	EditMessage(channelID, messageID, content string) (*discordgo.Message, error)
-	DeleteMessage(channelID, messageID string) error
+
+	// SendMessageWithIdentity sends content appearing to come from id.
+	// The implementation chooses the appropriate transport (webhook or
+	// direct API) to honour the requested identity.
+	SendMessageWithIdentity(channelID, content string, id Identity) (*discordgo.Message, error)
+
+	// Reply sends content as the bot's own identity in reply to messageID.
+	Reply(channelID, messageID, content string) (*discordgo.Message, error)
+
+	// Edit replaces the content of an existing bot-owned message.
+	Edit(channelID, messageID, content string) (*discordgo.Message, error)
+
+	// Delete removes a message.
+	Delete(channelID, messageID string) error
+
+	// Close releases resources held by the service. For the real implementation
+	// this stops the webhook reaper and deletes all owned webhooks. Call on
+	// bot shutdown for a clean Discord state.
+	Close() error
 }
 
-type messagingService struct {
-	session *discordgo.Session
+type discordMessageService struct {
+	session  *discordgo.Session
+	webhooks WebhookService
 }
 
-// NewMessagingService creates a new MessagingService using the provided discordgo Session.
-func NewMessagingService(s *discordgo.Session) MessagingService {
-	return &messagingService{session: s}
+// NewMessageService returns a MessageService backed by s. SendMessageWithIdentity
+// delegates to an internal WebhookService that manages per-channel webhook
+// creation and caching automatically.
+func NewMessageService(s *discordgo.Session) MessageService {
+	return &discordMessageService{
+		session:  s,
+		webhooks: newDiscordWebhookService(s),
+	}
 }
 
-func (s *messagingService) SendMessage(channelID, content string) (*discordgo.Message, error) {
-	return s.session.ChannelMessageSend(channelID, content)
+func (ms *discordMessageService) SendMessage(channelID, content string) (*discordgo.Message, error) {
+	return ms.session.ChannelMessageSend(channelID, content)
 }
 
-func (s *messagingService) SendComplexMessage(channelID string, data *discordgo.MessageSend) (*discordgo.Message, error) {
-	return s.session.ChannelMessageSendComplex(channelID, data)
+func (ms *discordMessageService) SendMessageWithIdentity(channelID, content string, id Identity) (*discordgo.Message, error) {
+	return ms.webhooks.Execute(channelID, content, id)
 }
 
-func (s *messagingService) ReplyMessage(channelID, messageID, content string) (*discordgo.Message, error) {
-	return s.session.ChannelMessageSendReply(channelID, content, &discordgo.MessageReference{
+func (ms *discordMessageService) Reply(channelID, messageID, content string) (*discordgo.Message, error) {
+	return ms.session.ChannelMessageSendReply(channelID, content, &discordgo.MessageReference{
 		MessageID: messageID,
 		ChannelID: channelID,
 	})
 }
 
-func (s *messagingService) EditMessage(channelID, messageID, content string) (*discordgo.Message, error) {
-	return s.session.ChannelMessageEdit(channelID, messageID, content)
+func (ms *discordMessageService) Edit(channelID, messageID, content string) (*discordgo.Message, error) {
+	return ms.session.ChannelMessageEdit(channelID, messageID, content)
 }
 
-func (s *messagingService) DeleteMessage(channelID, messageID string) error {
-	return s.session.ChannelMessageDelete(channelID, messageID)
+func (ms *discordMessageService) Delete(channelID, messageID string) error {
+	return ms.session.ChannelMessageDelete(channelID, messageID)
 }
 
-func (s *messagingService) SendMessageWithIdentity(channelID, content, username, avatarURL string) (*discordgo.Message, error) {
-	webhook, err := s.getOrCreateWebhook(channelID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get or create webhook: %w", err)
-	}
-
-	params := &discordgo.WebhookParams{
-		Content:   content,
-		Username:  username,
-		AvatarURL: avatarURL,
-	}
-
-	return s.session.WebhookExecute(webhook.ID, webhook.Token, true, params)
-}
-
-func (s *messagingService) getOrCreateWebhook(channelID string) (*discordgo.Webhook, error) {
-	webhooks, err := s.session.ChannelWebhooks(channelID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, wh := range webhooks {
-		// Just take the first webhook managed by the bot
-		if wh.User != nil && wh.User.ID == s.session.State.User.ID {
-			return wh, nil
-		}
-	}
-
-	// Create a new webhook if none exists
-	return s.session.WebhookCreate(channelID, "Starbunk Webhook", "")
+func (ms *discordMessageService) Close() error {
+	return ms.webhooks.Close()
 }

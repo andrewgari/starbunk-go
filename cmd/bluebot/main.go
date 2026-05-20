@@ -33,7 +33,7 @@ func main() {
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	blueBotOnce.Do(func() {
 		blueBot = replybot.NewBot(
-			discord.NewMessagingService(s),
+			discord.NewMessageService(s),
 			BlueStrategy{},
 		)
 	})

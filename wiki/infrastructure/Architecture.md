@@ -15,8 +15,8 @@ starbunk-go/
     djcova/
     ratbot/
   internal/
-    bot/        # bot.Run, Identity, IdentityProvider
-    discord/    # MessagingService interface + implementation
+    bot/        # bot.Run framework
+    discord/    # Identity, MessageService, WebhookService
   docker/
     Dockerfile          # single multi-stage build; BOT_NAME arg selects binary
     docker-compose.yml  # local dev — builds from source
@@ -34,14 +34,36 @@ starbunk-go/
 - `bot.Run(name, auditor, handlers...)` — reads `DISCORD_TOKEN`, creates a discordgo
   session, wraps every `MessageCreate` handler with the supplied auditor, registers
   all handlers, blocks until SIGINT/SIGTERM.
-- `Identity` / `IdentityProvider` — persona model for webhook impersonation.
-  `DiscordIdentityProvider` prefers guild-member details over global user details.
 
 ### `internal/discord`
 
-- `MessagingService` — interface over discordgo for send, reply, edit, delete.
-- `SendMessageWithIdentity` — creates/reuses a per-channel webhook to post as a
-  custom user/avatar.
+Three single-responsibility layers:
+
+- **`Identity` / `IdentityProvider`** — first-class persona concept. `Identity{Username, Nickname, AvatarURL}` belongs to any message, not just webhook sends. `DiscordIdentityProvider` resolves live Discord identities, preferring guild-member details over global user details.
+
+- **`WebhookService`** — internal implementation detail; callers never use it directly. Manages the full lifecycle of per-channel webhooks:
+  - Lazily creates a webhook named `"Starbunk Webhook"` on first use (found by name, not by owner — all bots share one slot per channel, well within Discord's 15-webhook-per-channel limit).
+  - Caches entries in a `channelID → {webhook, lastUsed}` registry.
+  - Background reaper (every 1 minute) deletes webhooks idle longer than 5 minutes.
+  - `Close()` stops the reaper and immediately deletes all owned webhooks for a clean shutdown.
+
+- **`MessageService`** — the only caller-facing send API. Callers say *what* to send and *as whom*; the implementation decides how to deliver it (direct API vs webhook). `NewMessageService(s)` wires all layers internally.
+
+  ```go
+  type MessageService interface {
+      // Bot's own identity — admin, errors, ephemeral messages
+      SendMessage(channelID, content string) (*discordgo.Message, error)
+      // Caller-provided identity — service decides transport
+      SendMessageWithIdentity(channelID, content string, id Identity) (*discordgo.Message, error)
+      Reply(channelID, messageID, content string) (*discordgo.Message, error)
+      Edit(channelID, messageID, content string) (*discordgo.Message, error)
+      Delete(channelID, messageID string) error
+      // Close releases webhook resources; call on bot shutdown
+      Close() error
+  }
+  ```
+
+  `SendMessage` always uses the direct Discord API (no persona). `SendMessageWithIdentity` delegates to `WebhookService` — the caller never thinks about webhooks.
 
 ### `internal/middleware`
 
@@ -105,8 +127,14 @@ func main() {
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
     // Audit has already passed. No guard needed here.
-    sender := discord.NewMessagingService(s)
+    sender := discord.NewMessageService(s)
+
+    // Send as the bot itself (admin, errors, simple replies):
     sender.SendMessage(m.ChannelID, "response")
+
+    // Send as a named persona (service handles transport internally):
+    id := discord.Identity{Username: "CustomName", AvatarURL: "https://..."}
+    sender.SendMessageWithIdentity(m.ChannelID, "response", id)
 }
 ```
 

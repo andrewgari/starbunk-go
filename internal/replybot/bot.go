@@ -14,12 +14,12 @@ import (
 // makes it straightforward to add, remove, or reorder behaviours.
 type Bot struct {
 	strategies []Strategy
-	sender     discord.MessagingService
+	sender     discord.MessageService
 }
 
 // NewBot constructs a Bot with the given sender and strategies. Strategies
 // are evaluated in the order they are passed — put higher-priority rules first.
-func NewBot(sender discord.MessagingService, strategies ...Strategy) *Bot {
+func NewBot(sender discord.MessageService, strategies ...Strategy) *Bot {
 	return &Bot{
 		strategies: strategies,
 		sender:     sender,
@@ -31,6 +31,10 @@ func NewBot(sender discord.MessagingService, strategies ...Strategy) *Bot {
 // so conditions like AuthorHasRole can inspect guild state. ctx is forwarded to
 // every strategy call so that async implementations (e.g. LLM providers) can
 // respect cancellation and deadlines.
+//
+// If the matched strategy also implements IdentifiedStrategy, the response is
+// sent via SendMessageWithIdentity — the MessageService decides the transport.
+// Otherwise the response is sent via SendMessage (bot's own identity).
 func (b *Bot) Handle(ctx context.Context, s *discordgo.Session, m *discordgo.MessageCreate) {
 	for _, strategy := range b.strategies {
 		if cs, ok := strategy.(ConditionedStrategy); ok {
@@ -38,10 +42,16 @@ func (b *Bot) Handle(ctx context.Context, s *discordgo.Session, m *discordgo.Mes
 				continue
 			}
 		}
-		if strategy.ShouldTrigger(ctx, m) {
-			resp := strategy.Response(ctx, m)
-			if _, err := b.sender.SendMessage(m.ChannelID, resp); err != nil {
-				slog.Error("replybot: failed to send response",
+		if !strategy.ShouldTrigger(ctx, m) {
+			continue
+		}
+
+		resp := strategy.Response(ctx, m)
+
+		if identified, ok := strategy.(IdentifiedStrategy); ok {
+			id := identified.Identity(ctx, m)
+			if _, err := b.sender.SendMessageWithIdentity(m.ChannelID, resp, id); err != nil {
+				slog.Error("replybot: failed to send identified response",
 					"strategy", strategy.Name(),
 					"channel", m.ChannelID,
 					"err", err,
@@ -49,5 +59,14 @@ func (b *Bot) Handle(ctx context.Context, s *discordgo.Session, m *discordgo.Mes
 			}
 			return
 		}
+
+		if _, err := b.sender.SendMessage(m.ChannelID, resp); err != nil {
+			slog.Error("replybot: failed to send response",
+				"strategy", strategy.Name(),
+				"channel", m.ChannelID,
+				"err", err,
+			)
+		}
+		return
 	}
 }
