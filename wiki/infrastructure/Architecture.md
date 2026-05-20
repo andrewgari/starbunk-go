@@ -15,8 +15,8 @@ starbunk-go/
     djcova/
     ratbot/
   internal/
-    bot/        # bot.Run, Identity, IdentityProvider
-    discord/    # MessagingService interface + implementation
+    bot/        # bot.Run framework
+    discord/    # Identity, MessageService, WebhookService
   docker/
     Dockerfile          # single multi-stage build; BOT_NAME arg selects binary
     docker-compose.yml  # local dev — builds from source
@@ -34,14 +34,28 @@ starbunk-go/
 - `bot.Run(name, auditor, handlers...)` — reads `DISCORD_TOKEN`, creates a discordgo
   session, wraps every `MessageCreate` handler with the supplied auditor, registers
   all handlers, blocks until SIGINT/SIGTERM.
-- `Identity` / `IdentityProvider` — persona model for webhook impersonation.
-  `DiscordIdentityProvider` prefers guild-member details over global user details.
 
 ### `internal/discord`
 
-- `MessagingService` — interface over discordgo for send, reply, edit, delete.
-- `SendMessageWithIdentity` — creates/reuses a per-channel webhook to post as a
-  custom user/avatar.
+Three single-responsibility layers:
+
+- **`Identity` / `IdentityProvider`** — persona model. `Identity{Username, Nickname, AvatarURL}` is required for any webhook send. `DiscordIdentityProvider` resolves live Discord identities, preferring guild-member details over global user details.
+
+- **`WebhookService`** — manages per-channel Discord webhook lifecycle (creation, caching) and executes `WebhookMessage` payloads. `WebhookMessage.Identity` is required and validated at send time; a zero-value identity returns an error.
+
+- **`MessageService`** — high-level send interface. `NewMessageService(s)` returns an implementation that delegates `Send` (direct API) and `SendAs` (webhook) to the appropriate layer. Implementations are fully swappable via injection.
+
+  ```go
+  type MessageService interface {
+      Send(channelID string, msg DirectMessage) (*discordgo.Message, error)
+      SendAs(channelID string, msg WebhookMessage) (*discordgo.Message, error)
+      Reply(channelID, messageID string, msg DirectMessage) (*discordgo.Message, error)
+      Edit(channelID, messageID, content string) (*discordgo.Message, error)
+      Delete(channelID, messageID string) error
+  }
+  ```
+
+  Message types are distinct by design — `DirectMessage` carries no identity field (compile-time enforcement), `WebhookMessage` requires one.
 
 ### `internal/middleware`
 
@@ -105,9 +119,15 @@ func main() {
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
     // Audit has already passed. No guard needed here.
-    sender := discord.NewMessagingService(s)
-    sender.SendMessage(m.ChannelID, "response")
+    sender := discord.NewMessageService(s)
+    sender.Send(m.ChannelID, discord.DirectMessage{Content: "response"})
 }
+
+// To send as a custom persona via webhook:
+sender.SendAs(m.ChannelID, discord.WebhookMessage{
+    Identity: discord.Identity{Username: "CustomName", AvatarURL: "https://..."},
+    Content:  "response",
+})
 ```
 
 ## Discord Intents

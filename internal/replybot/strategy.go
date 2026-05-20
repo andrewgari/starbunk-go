@@ -14,6 +14,7 @@ package replybot
 import (
 	"context"
 
+	"github.com/andrewgari/starbunk-go/internal/discord"
 	"github.com/andrewgari/starbunk-go/internal/middleware"
 	"github.com/bwmarrin/discordgo"
 )
@@ -47,4 +48,14 @@ type Strategy interface {
 type ConditionedStrategy interface {
 	Strategy
 	Condition() middleware.MessageAuditor
+}
+
+// IdentifiedStrategy is an optional extension of Strategy for bots that want
+// to respond as a custom persona via webhook. When a strategy implements this
+// interface, Bot.Handle calls Identity after ShouldTrigger returns true. If
+// Identity returns useWebhook == true the response is sent via SendAs;
+// otherwise it falls through to a plain Send.
+type IdentifiedStrategy interface {
+	Strategy
+	Identity(ctx context.Context, msg *discordgo.MessageCreate) (id discord.Identity, useWebhook bool)
 }

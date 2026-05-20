@@ -22,8 +22,8 @@ func main() {
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Content == "ping covabot" {
-		sender := discord.NewMessagingService(s)
-		_, err := sender.SendMessage(m.ChannelID, "Pong from covabot!")
+		sender := discord.NewMessageService(s)
+		_, err := sender.Send(m.ChannelID, discord.DirectMessage{Content: "Pong from covabot!"})
 		if err != nil {
 			slog.Error("failed to send message", "bot", "covabot", "err", err)
 		}

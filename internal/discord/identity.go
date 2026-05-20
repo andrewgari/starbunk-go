@@ -1,10 +1,10 @@
-package bot
+package discord
 
 import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// Identity represents the persona a bot or poster assumes.
+// Identity represents the persona a bot or poster assumes when sending messages.
 type Identity struct {
 	Nickname  string
 	Username  string
@@ -12,17 +12,17 @@ type Identity struct {
 	Metadata  map[string]string
 }
 
-// IsValid checks if the Identity has the required username and avatar url.
+// IsValid reports whether the Identity carries the minimum fields required to
+// execute a webhook: a display name and avatar URL.
 func (i Identity) IsValid() bool {
 	return i.Username != "" && i.AvatarURL != ""
 }
 
-// Resolve returns a complete Identity, falling back to the bot's default profile
-// name and avatar from the Discord session if they are not specified.
+// Resolve returns a complete Identity, falling back to the bot's own profile
+// from the Discord session for any missing Username or AvatarURL.
 func (i Identity) Resolve(s *discordgo.Session) Identity {
 	resolved := i
 
-	// If Username or AvatarURL is missing, use the bot's default profile
 	if s != nil && s.State != nil && s.State.User != nil {
 		if resolved.Username == "" {
 			resolved.Username = s.State.User.Username
@@ -39,22 +39,24 @@ func (i Identity) Resolve(s *discordgo.Session) Identity {
 	return resolved
 }
 
-// IdentityProvider defines how we retrieve identities for a given user.
+// IdentityProvider retrieves a Discord user's identity on demand.
 type IdentityProvider interface {
 	GetIdentity(userID string, guildID string) (Identity, error)
 }
 
-// DiscordIdentityProvider retrieves user identities directly from Discord.
+// DiscordIdentityProvider resolves user identities directly from Discord,
+// preferring guild-member details (nick, server avatar) over global user details.
 type DiscordIdentityProvider struct {
 	session *discordgo.Session
 }
 
-// NewDiscordIdentityProvider creates a new DiscordIdentityProvider.
+// NewDiscordIdentityProvider creates a DiscordIdentityProvider backed by s.
 func NewDiscordIdentityProvider(s *discordgo.Session) *DiscordIdentityProvider {
 	return &DiscordIdentityProvider{session: s}
 }
 
-// GetIdentity queries Discord for a user's identity, preferring server-specific details (Member) if a guildID is provided.
+// GetIdentity queries Discord for userID. When guildID is non-empty it prefers
+// the guild member record (nick, server avatar) over the global user profile.
 func (p *DiscordIdentityProvider) GetIdentity(userID string, guildID string) (Identity, error) {
 	var id Identity
 
