@@ -16,10 +16,10 @@ type ollamaClient struct {
 }
 
 type ollamaRequest struct {
-	Model       string          `json:"model"`
-	Messages    []ollamaMessage `json:"messages"`
-	Stream      bool            `json:"stream"`
-	Options     *ollamaOptions  `json:"options,omitempty"`
+	Model    string          `json:"model"`
+	Messages []ollamaMessage `json:"messages"`
+	Stream   bool            `json:"stream"`
+	Options  *ollamaOptions  `json:"options,omitempty"`
 }
 
 type ollamaOptions struct {
@@ -89,7 +89,9 @@ func (c *ollamaClient) Generate(ctx context.Context, req GenerateRequest) (*Gene
 	if err != nil {
 		return nil, fmt.Errorf("ollama: request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(resp.Body)

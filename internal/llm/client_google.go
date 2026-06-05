@@ -16,8 +16,8 @@ type googleClient struct {
 }
 
 type googleRequest struct {
-	SystemInstruction *googleContent         `json:"system_instruction,omitempty"`
-	Contents          []googleContent        `json:"contents"`
+	SystemInstruction *googleContent          `json:"system_instruction,omitempty"`
+	Contents          []googleContent         `json:"contents"`
 	GenerationConfig  *googleGenerationConfig `json:"generationConfig,omitempty"`
 }
 
@@ -105,7 +105,9 @@ func (c *googleClient) Generate(ctx context.Context, req GenerateRequest) (*Gene
 	if err != nil {
 		return nil, fmt.Errorf("google: request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(resp.Body)

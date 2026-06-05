@@ -81,7 +81,9 @@ func (c *openAIClient) Generate(ctx context.Context, req GenerateRequest) (*Gene
 	if err != nil {
 		return nil, fmt.Errorf("openai: request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(resp.Body)
