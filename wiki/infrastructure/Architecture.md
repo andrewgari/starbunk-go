@@ -65,6 +65,12 @@ Three single-responsibility layers:
 
   `SendMessage` always uses the direct Discord API (no persona). `SendMessageWithIdentity` delegates to `WebhookService` — the caller never thinks about webhooks.
 
+### `internal/llm`
+
+- `Service` — unified abstraction for bots to interact with Large Language Models.
+- Agnostic to providers (OpenAI, Anthropic, Ollama, Google).
+- Explicit `ResponseSchema` allows callers to enforce format (Text, JSON, Enum) and provide validation rules or choices.
+
 ### `internal/middleware`
 
 Composable message audit gates. Every bot must supply a `MessageAuditor` to
