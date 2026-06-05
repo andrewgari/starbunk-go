@@ -35,7 +35,9 @@ func NewPGStore(connStr string) (Store, error) {
 		return nil, fmt.Errorf("memory: failed to open db: %w", err)
 	}
 
-	if err := db.PingContext(context.Background()); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := db.PingContext(ctx); err != nil {
 		return nil, fmt.Errorf("memory: failed to ping db: %w", err)
 	}
 
@@ -81,7 +83,7 @@ func (s *pgStore) SaveMemory(ctx context.Context, userID string, content string,
 	if err != nil {
 		return fmt.Errorf("memory: failed to save: %w", err)
 	}
-	slog.Info("saved memory to pgvector", "user", userID)
+	slog.Debug("saved memory to pgvector")
 	return nil
 }
 
@@ -104,6 +106,9 @@ func (s *pgStore) FindSimilar(ctx context.Context, embedding []float32, limit in
 			return nil, fmt.Errorf("memory: row scan error: %w", err)
 		}
 		results = append(results, rec)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("memory: row iteration error: %w", err)
 	}
 	return results, nil
 }

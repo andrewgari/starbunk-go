@@ -56,12 +56,13 @@ func (s *serviceImpl) ExtractAndSave(ctx context.Context, userID string, message
 			return
 		}
 
-		if strings.Contains(resp.Text, "NONE") || resp.Text == "" {
+		fact := strings.TrimSpace(resp.Text)
+		if fact == "" || strings.EqualFold(fact, "NONE") {
 			return // Nothing worth saving
 		}
 
 		embedReq := llm.EmbedRequest{
-			Input: []string{resp.Text},
+			Input: []string{fact},
 		}
 		embedResp, err := lowLLM.Embed(bgCtx, embedReq)
 		if err != nil {
@@ -73,7 +74,7 @@ func (s *serviceImpl) ExtractAndSave(ctx context.Context, userID string, message
 			return
 		}
 
-		if err := s.store.SaveMemory(bgCtx, userID, resp.Text, embedResp.Embeddings[0]); err != nil {
+		if err := s.store.SaveMemory(bgCtx, userID, fact, embedResp.Embeddings[0]); err != nil {
 			slog.Error("memory: failed to save memory", "err", err)
 		}
 	}()
