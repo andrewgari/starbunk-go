@@ -69,7 +69,7 @@ Three single-responsibility layers:
 
 - `Service` — unified abstraction for bots to interact with Large Language Models.
 - Agnostic to providers (OpenAI, Anthropic, Ollama, Google).
-- Explicit `ResponseSchema` allows callers to enforce format (Text, JSON, Enum) and provide validation rules or choices.
+- Defines `ResponseSchema` for callers to specify format expectations (validation enforcement pending).
 
 ### `internal/middleware`
 
