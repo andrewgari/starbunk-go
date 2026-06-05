@@ -11,7 +11,7 @@ import (
 )
 
 type anthropicClient struct {
-	config     Config
+	config     ClientConfig
 	httpClient *http.Client
 }
 
@@ -38,7 +38,7 @@ type anthropicResponse struct {
 	} `json:"usage"`
 }
 
-func newAnthropicClient(cfg Config) Service {
+func newAnthropicClient(cfg ClientConfig) Service {
 	if cfg.BaseURL == "" {
 		cfg.BaseURL = "https://api.anthropic.com/v1"
 	}
@@ -114,4 +114,8 @@ func (c *anthropicClient) Generate(ctx context.Context, req GenerateRequest) (*G
 		PromptTokens:     apiResp.Usage.InputTokens,
 		CompletionTokens: apiResp.Usage.OutputTokens,
 	}, nil
+}
+
+func (c *anthropicClient) Embed(ctx context.Context, req EmbedRequest) (*EmbedResponse, error) {
+	return nil, fmt.Errorf("anthropic: embed not supported")
 }

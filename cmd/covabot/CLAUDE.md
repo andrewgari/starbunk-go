@@ -21,7 +21,7 @@ user's tone and conversational style. Ported from starbunk-js CovaBot.
 
 - `internal/bot.Run` — event loop and session management.
 - `internal/discord.MessagingService` — sends replies.
-- LLM provider: configured via `LOCAL_LLM_PROVIDER` / `CLOUD_LLM_PROVIDER` env vars (not yet wired).
+- LLM provider: configured via `.env` (using High/Medium/Low tiers via `internal/llm.NewRegistry`).
 - All LLM calls must be fully async and timeout-resistant.
 
 ## Edge Cases

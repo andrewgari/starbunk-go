@@ -11,7 +11,7 @@ import (
 )
 
 type ollamaClient struct {
-	config     Config
+	config     ClientConfig
 	httpClient *http.Client
 }
 
@@ -40,7 +40,7 @@ type ollamaResponse struct {
 	EvalCount       int `json:"eval_count"`
 }
 
-func newOllamaClient(cfg Config) Service {
+func newOllamaClient(cfg ClientConfig) Service {
 	if cfg.BaseURL == "" {
 		cfg.BaseURL = "http://localhost:11434"
 	}
@@ -108,4 +108,8 @@ func (c *ollamaClient) Generate(ctx context.Context, req GenerateRequest) (*Gene
 		PromptTokens:     apiResp.PromptEvalCount,
 		CompletionTokens: apiResp.EvalCount,
 	}, nil
+}
+
+func (c *ollamaClient) Embed(ctx context.Context, req EmbedRequest) (*EmbedResponse, error) {
+	return nil, fmt.Errorf("ollama: embed not implemented yet")
 }
