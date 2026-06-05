@@ -1,5 +1,8 @@
 # Testing
 
+> [!IMPORTANT]
+> **Mandatory TDD SDLC**: All development in this repository must follow the [[development/TDD|Test-Driven Development (TDD) SDLC Workflow]]. Feature implementation and test writing are separated into a two-PR sequence (Test-Only PR followed by Implementation PR).
+
 ## Framework
 
 Tests use **Ginkgo v2 / Gomega** BDD framework.
@@ -53,4 +56,5 @@ var _ = Describe("MessagingService", func() {
 
 ## See Also
 
+- [[development/TDD|TDD SDLC Workflow]] — mandatory test-first development lifecycle
 - [[CI-CD|CI/CD]] — tests run as a required check on every PR
