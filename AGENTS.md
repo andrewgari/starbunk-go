@@ -16,7 +16,7 @@ read it directly.
 3. **For every significant change or PR** — add an entry to `wiki/Changelog.md` under today's date.
 4. If a wiki page does not exist for the area you are working in, **create it**.
 5. Create new pages freely. Use plain relative links to connect related pages.
-6. Keep `wiki/raw/` for drafts and staged content. Promote to `wiki/` on merge.
+6. Keep `wiki/raw/` for local drafts and staged content (do not commit to Git). Promote to `wiki/` on merge.
 
 The wiki lives at `wiki/` in the repo root. Start at `wiki/Home.md`.
 
@@ -50,8 +50,7 @@ Create or update `wiki/raw/CHANGELOG-<branch-name>.md` as you go. Format:
 - ...
 ```
 
-Commit this file alongside code changes. It is the staging area for the real
-changelog.
+Keep this file local-only (do not commit it to Git; it is ignored by `.gitignore`). It is the local staging area for the real changelog.
 
 ### On merge (PR completion)
 
@@ -203,7 +202,7 @@ A task is **not complete** until:
 - [ ] `bash scripts/devops-validate.sh` exits cleanly (if any bot or CI/CD file was touched)
 - [ ] `go test ./...` passes locally
 - [ ] The relevant `wiki/` page(s) have been updated
-- [ ] An entry has been added to `wiki/Changelog.md` (or `wiki/raw/CHANGELOG-<branch>.md` if the PR is still open)
+- [ ] An entry has been added to `wiki/Changelog.md` (or to a local draft `wiki/raw/CHANGELOG-<branch>.md` if the PR is still open)
 - [ ] The change follows the Two-PR TDD sequence constraint (PR 1: Test-Only, PR 2: Implementation)
 - [ ] Ginkgo tests are added or improved to fully cover the behavior changes
 
