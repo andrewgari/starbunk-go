@@ -17,6 +17,8 @@ jobs:
     outputs:
       bots: ${{ steps.matrix.outputs.bots }}
       has_bot_changes: ${{ steps.matrix.outputs.has_bot_changes }}
+      run_lint: ${{ steps.matrix.outputs.run_lint }}
+      run_devops: ${{ steps.matrix.outputs.run_devops }}
     steps:
       - uses: actions/checkout@v4
 
@@ -58,6 +60,18 @@ jobs:
               - 'go.mod'
               - 'go.sum'
               - 'docker/Dockerfile'
+            go_related:
+              - '**/*.go'
+              - 'go.mod'
+              - 'go.sum'
+              - '.golangci.yml'
+            devops:
+              - 'docker-compose.yml'
+              - 'docker/docker-compose.yml'
+              - '.github/workflows/**'
+              - 'scripts/deployment/health-check.sh'
+              - 'scripts/devops-validate.sh'
+              - 'AGENTS.md'
 
       - name: Build bot matrix
         id: matrix
@@ -110,10 +124,26 @@ jobs:
             echo 'has_bot_changes=true' >> $GITHUB_OUTPUT
           fi
 
+          # Determine if Go-related changes occurred
+          RUN_LINT="false"
+          if [ "${{ steps.filter.outputs.go_related }}" == "true" ]; then
+            RUN_LINT="true"
+          fi
+          echo "run_lint=${RUN_LINT}" >> $GITHUB_OUTPUT
+
+          # Determine if DevOps changes occurred
+          RUN_DEVOPS="false"
+          if [ "${{ steps.filter.outputs.devops }}" == "true" ] || [ ${#BOTS[@]} -gt 0 ]; then
+            RUN_DEVOPS="true"
+          fi
+          echo "run_devops=${RUN_DEVOPS}" >> $GITHUB_OUTPUT
+
   # ─── DevOps consistency gate ─────────────────────────────────────────────────
   validate_devops:
     name: Validate DevOps Consistency
     runs-on: ubuntu-latest
+    needs: detect_changes
+    if: needs.detect_changes.outputs.run_devops == 'true'
     steps:
       - uses: actions/checkout@v4
       - name: Check all DevOps files are in sync
@@ -123,6 +153,8 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    needs: detect_changes
+    if: needs.detect_changes.outputs.run_lint == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -138,8 +170,14 @@ jobs:
 
   # ─── Unit Tests ──────────────────────────────────────────────────────────────
   test:
-    name: Test
+    name: Test / ${{ matrix.bot }}
     runs-on: ubuntu-latest
+    needs: detect_changes
+    if: needs.detect_changes.outputs.has_bot_changes == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        bot: ${{ fromJson(needs.detect_changes.outputs.bots) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -152,13 +190,12 @@ jobs:
         run: go mod download
 
       - name: Vet
-        run: go vet ./...
-
-      - name: Build
-        run: go build ./...
+        run: |
+          go vet $(go list -deps -f '{{if not .Standard}}{{.ImportPath}}{{end}}' ./cmd/${{ matrix.bot }} | grep "github.com/andrewgari/starbunk-go" | sed 's|github.com/andrewgari/starbunk-go/|./|')
 
       - name: Run tests
-        run: go test ./... -v
+        run: |
+          go test -v $(go list -deps -f '{{if not .Standard}}{{.ImportPath}}{{end}}' ./cmd/${{ matrix.bot }} | grep "github.com/andrewgari/starbunk-go" | sed 's|github.com/andrewgari/starbunk-go/|./|')
 
   # ─── Build binaries (selective) ──────────────────────────────────────────────
   build:

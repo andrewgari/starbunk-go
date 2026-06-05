@@ -1,8 +1,8 @@
-# Custom Claude Code Agents
+# Custom AI Agents (Claude & Gemini)
 
-> Last Updated: 2026-05-07
+> Last Updated: 2026-06-05
 
-Custom subagents for this repo live in `.claude/agents/`. They are loaded automatically by Claude Code and invoked based on their `description` field.
+Custom subagents/skills for this repo live in `.claude/agents/` for Claude Code and `.gemini/skills/` for Gemini (Antigravity). They are loaded automatically by the respective AI and invoked based on their `description` field.
 
 ---
 
@@ -16,6 +16,10 @@ Four agents cover the main concerns of working in this repo. They are designed t
 | `architect` | `.claude/agents/architect.md` | Architecture planning, cross-cutting review, directing other agents |
 | `go-craftsman` | `.claude/agents/go-craftsman.md` | Go code writing, idiomatic patterns, naming, aesthetics |
 | `devops` | `.claude/agents/devops.md` | GitHub, CI/CD, Docker Compose, deployment |
+| `task-runner` | `.claude/agents/task-runner.md` | Feature execution, branching, worktree isolation, and PR creation |
+| `address-pr-comments` | `.claude/agents/address-pr-comments.md` | Fetches PR comments, ranks importance, asks user for fixes, executes, and closes threads |
+| `debugger` | `.claude/agents/debugger.md` | Production incident response, Grafana log analysis, and root cause diagnosis |
+| `ci-diagnose` | `.claude/commands/ci-diagnose.md` | Autonomously diagnose and fix a failing CI pipeline on the current branch |
 
 ---
 

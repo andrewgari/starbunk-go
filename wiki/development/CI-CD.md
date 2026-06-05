@@ -6,20 +6,21 @@
 
 Triggered on all PRs to `main`. Jobs:
 
-1. **Validate DevOps Consistency** — runs `scripts/devops-validate.sh`; fails fast if any bot is not registered in all required files.
-2. **Lint** — runs `golangci-lint`.
-3. **Test** — runs `go vet` and `go test ./...`.
-4. **Build** — matrix build; builds each affected bot binary to verify compilation.
-5. **Docker Test** — builds each affected Docker image to verify the Dockerfile.
+1. **Validate DevOps Consistency** — runs `scripts/devops-validate.sh` to check if all bots are registered in required config files; skipped if no DevOps files or bot code changed.
+2. **Lint** — runs `golangci-lint` on the repository; skipped if no Go files or Go config files changed.
+3. **Test** — matrix build; runs `go vet` and `go test` for each affected bot, dynamically running only on packages in the bot's build/runpath; skipped if no bot code changed.
+4. **Build** — matrix build; builds each affected bot binary to verify compilation; skipped if no bot code changed.
+5. **Docker Test** — matrix build; builds each affected Docker image to verify the Dockerfile; skipped if no bot code changed.
 
-All five jobs are required to pass before a PR can merge.
+All five jobs are required to pass before a PR can merge (unless they are skipped due to change-detection logic, which counts as passed/success).
 
 #### Selective Validation (Change Detection)
 
-The `ci.yml` workflow optimizes build and smoke test times by selectively compiling and testing only the bots affected by a PR's changes:
-- **Global / Core Changes**: Modifying `go.mod`, `go.sum`, `docker/Dockerfile`, or core packages (`internal/bot`, `internal/discord`, `internal/middleware`) triggers builds and tests for **all** bots.
-- **Specific Shared Libraries**: Changes under `internal/replybot` only trigger builds/tests for `bluebot`. Changes under `internal/llm` or `internal/memory` only trigger builds/tests for `covabot`.
-- **Bot-Specific Code**: Modifying code in a specific bot's directory (e.g. `cmd/bunkbot/`) only triggers builds/tests for that bot.
+The `ci.yml` workflow optimizes execution times by gating jobs and selectively compiling/testing only the packages affected by a PR's changes:
+- **No Go / DevOps changes (e.g. pure documentation/wiki PRs)**: All CI check jobs (DevOps validation, Lint, Test, Build, Docker Test) are skipped.
+- **Global / Core Changes**: Modifying `go.mod`, `go.sum`, `docker/Dockerfile`, or core packages (`internal/bot`, `internal/discord`, `internal/middleware`, `internal/other`) triggers builds, vet, tests, and docker checks for **all** bots.
+- **Specific Shared Libraries**: Changes under `internal/replybot` only trigger builds/tests/checks for `bluebot`. Changes under `internal/llm` or `internal/memory` only trigger builds/tests/checks for `covabot`.
+- **Bot-Specific Code**: Modifying code in a specific bot's directory (e.g. `cmd/bunkbot/`) only triggers builds/tests/checks for that bot.
 
 
 ### `main.yml` — Merge to Main (auto-release)
