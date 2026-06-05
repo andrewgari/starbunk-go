@@ -11,7 +11,8 @@ CovaBot, which uses Ollama (primary), Gemini, and OpenAI as fallbacks.
 ## Major Features
 
 - Personality-driven LLM response generation.
-- Conversational context modelling.
+- Conversational context modelling and active conversation tracking.
+- Context-aware tagging capable of combining generic and specific tags and reducing duplication.
 - Multi-provider LLM support (Ollama → Gemini → OpenAI fallback chain).
 
 ## Dependencies & Architecture
@@ -31,5 +32,6 @@ CovaBot, which uses Ollama (primary), Gemini, and OpenAI as fallbacks.
 
 ## See Also
 
+- [[CovaBot-Design|CovaBot (Go Rewrite) — Design Record]]
 - `cmd/covabot/CLAUDE.md`
 - [[../infrastructure/Configuration|Configuration]] for LLM env vars
