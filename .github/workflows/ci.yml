@@ -34,8 +34,27 @@ jobs:
               - 'cmd/djcova/**'
             ratbot:
               - 'cmd/ratbot/**'
-            internal:
+            internal_bot:
+              - 'internal/bot/**'
+            internal_discord:
+              - 'internal/discord/**'
+            internal_llm:
+              - 'internal/llm/**'
+            internal_memory:
+              - 'internal/memory/**'
+            internal_middleware:
+              - 'internal/middleware/**'
+            internal_replybot:
+              - 'internal/replybot/**'
+            internal_other:
               - 'internal/**'
+              - '!internal/bot/**'
+              - '!internal/discord/**'
+              - '!internal/llm/**'
+              - '!internal/memory/**'
+              - '!internal/middleware/**'
+              - '!internal/replybot/**'
+            global:
               - 'go.mod'
               - 'go.sum'
               - 'docker/Dockerfile'
@@ -44,15 +63,42 @@ jobs:
         id: matrix
         run: |
           BOTS=()
-          # Shared code changes rebuild every bot.
-          if [ "${{ steps.filter.outputs.internal }}" == "true" ]; then
+
+          # Determine if global/general changes happened
+          GLOBAL_CHANGE=false
+          if [ "${{ steps.filter.outputs.global }}" == "true" ] || \
+             [ "${{ steps.filter.outputs.internal_bot }}" == "true" ] || \
+             [ "${{ steps.filter.outputs.internal_discord }}" == "true" ] || \
+             [ "${{ steps.filter.outputs.internal_middleware }}" == "true" ] || \
+             [ "${{ steps.filter.outputs.internal_other }}" == "true" ]; then
+            GLOBAL_CHANGE=true
+          fi
+
+          if [ "$GLOBAL_CHANGE" == "true" ]; then
             BOTS=("bluebot" "bunkbot" "covabot" "djcova" "ratbot")
           else
-            [[ "${{ steps.filter.outputs.bluebot }}" == "true" ]] && BOTS+=("bluebot")
-            [[ "${{ steps.filter.outputs.bunkbot }}" == "true" ]] && BOTS+=("bunkbot")
-            [[ "${{ steps.filter.outputs.covabot }}" == "true" ]] && BOTS+=("covabot")
-            [[ "${{ steps.filter.outputs.djcova }}"  == "true" ]] && BOTS+=("djcova")
-            [[ "${{ steps.filter.outputs.ratbot }}"  == "true" ]] && BOTS+=("ratbot")
+            BLUEBOT_CHANGED="${{ steps.filter.outputs.bluebot }}"
+            BUNKBOT_CHANGED="${{ steps.filter.outputs.bunkbot }}"
+            COVABOT_CHANGED="${{ steps.filter.outputs.covabot }}"
+            DJCOVA_CHANGED="${{ steps.filter.outputs.djcova }}"
+            RATBOT_CHANGED="${{ steps.filter.outputs.ratbot }}"
+
+            # replybot changes only affect bluebot
+            if [ "${{ steps.filter.outputs.internal_replybot }}" == "true" ]; then
+              BLUEBOT_CHANGED="true"
+            fi
+
+            # llm/memory changes only affect covabot
+            if [ "${{ steps.filter.outputs.internal_llm }}" == "true" ] || \
+               [ "${{ steps.filter.outputs.internal_memory }}" == "true" ]; then
+              COVABOT_CHANGED="true"
+            fi
+
+            [[ "$BLUEBOT_CHANGED" == "true" ]] && BOTS+=("bluebot")
+            [[ "$BUNKBOT_CHANGED" == "true" ]] && BOTS+=("bunkbot")
+            [[ "$COVABOT_CHANGED" == "true" ]] && BOTS+=("covabot")
+            [[ "$DJCOVA_CHANGED"  == "true" ]] && BOTS+=("djcova")
+            [[ "$RATBOT_CHANGED"  == "true" ]] && BOTS+=("ratbot")
           fi
 
           if [ ${#BOTS[@]} -eq 0 ]; then
