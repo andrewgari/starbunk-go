@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Canonical agent guide for `starbunk-go`. All AI coding tools should read this
-file. Claude Code loads it automatically via `CLAUDE.md`; other tools should
+file. Claude Code loads it automatically via `CLAUDE.md`; Gemini loads it via `GEMINI.md`; other tools should
 read it directly.
 
 ---
@@ -544,6 +544,7 @@ with full rat-themed copy. See `cmd/ratbot/CLAUDE.md` and
 whenever bots, CI/CD, shared packages, or branch protection rules change.
 
 `CLAUDE.md` imports this file and adds Claude Code-specific notes.
+`GEMINI.md` imports this file and adds Gemini-specific notes.
 `.github/copilot-instructions.md` points GitHub Copilot here.
 
-Keep all three consistent — `AGENTS.md` is the canonical source.
+Keep all four consistent — `AGENTS.md` is the canonical source.
