@@ -19,6 +19,7 @@ Four agents cover the main concerns of working in this repo. They are designed t
 | `task-runner` | `.claude/agents/task-runner.md` | Feature execution, branching, worktree isolation, and PR creation |
 | `address-pr-comments` | `.claude/agents/address-pr-comments.md` | Fetches PR comments, ranks importance, asks user for fixes, executes, and closes threads |
 | `debugger` | `.claude/agents/debugger.md` | Production incident response, Grafana log analysis, and root cause diagnosis |
+| `ci-diagnose` | `.claude/commands/ci-diagnose.md` | Autonomously diagnose and fix a failing CI pipeline on the current branch |
 
 ---
 
