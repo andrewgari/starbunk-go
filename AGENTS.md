@@ -86,6 +86,19 @@ when the task matches — don't describe what you would do, just do it.
 
 ---
 
+## !! MANDATORY: TEST-DRIVEN DEVELOPMENT (TDD) WORKFLOW !!
+
+> **This rule applies to every agent, every task involving logic, behavior, or ports, without exception.**
+> There is no situation where implementing code without first writing failing tests is acceptable.
+
+1. **Two-PR Sequence constraint**:
+   - **PR 1: Test-Only / Behavior Definition**: You MUST only add/improve Ginkgo/Gomega tests defining the expected behavior. No implementation changes are allowed. This PR must fail the newly added tests (Red phase). Minimal stubs/interfaces may be added only to allow compilation.
+   - **PR 2: Implementation**: Only after the test-only PR is approved or merged may you write the Go code to satisfy those tests (Green/Refactor phase).
+2. **Finding Reference Behavior**: Look up legacy JS behavior in the sibling directory `../starbunk-js/src/<bot>/` first.
+3. For full details and step-by-step examples, read the [[TDD SDLC Workflow Guide|wiki/development/TDD.md]].
+
+---
+
 ## Self-Correction Protocol
 
 When something doesn't work as expected, work through this sequence before
@@ -191,6 +204,8 @@ A task is **not complete** until:
 - [ ] `go test ./...` passes locally
 - [ ] The relevant `wiki/` page(s) have been updated
 - [ ] An entry has been added to `wiki/Changelog.md` (or `wiki/raw/CHANGELOG-<branch>.md` if the PR is still open)
+- [ ] The change follows the Two-PR TDD sequence constraint (PR 1: Test-Only, PR 2: Implementation)
+- [ ] Ginkgo tests are added or improved to fully cover the behavior changes
 
 "The code works locally" is not done. "The PR is open" is not done.
 

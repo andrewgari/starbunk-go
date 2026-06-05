@@ -69,7 +69,15 @@ Three single-responsibility layers:
 
 - `Service` — unified abstraction for bots to interact with Large Language Models.
 - Agnostic to providers (OpenAI, Anthropic, Ollama, Google).
-- Defines `ResponseSchema` for callers to specify format expectations (validation enforcement pending).
+- `ResponseSchema` allows callers to specify format expectations (Text, JSON, Enum) and provide validation rules or choices (validation enforcement pending).
+- `Registry` — factory pattern for separating High, Medium, and Low capability tiers via `.env`.
+
+### `internal/memory`
+
+- `Service` — semantic memory system.
+- Asynchronously uses Low-tier LLMs to extract core facts or relationships from incoming messages.
+- Uses `pgvector` inside a PostgreSQL database to store text alongside generated embedding vectors.
+- Supports querying for relevant context using `Recall()` to inject past facts into the bot's system prompt.
 
 ### `internal/middleware`
 

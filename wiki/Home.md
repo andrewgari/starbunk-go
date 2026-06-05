@@ -32,6 +32,7 @@ with no shared database dependencies (yet).
 ### Development
 - [[development/Getting-Started|Getting Started]] — Local dev setup
 - [[development/Testing|Testing]] — Ginkgo/Gomega test guide
+- [[development/TDD|TDD SDLC Workflow]] — Mandatory test-first development process
 - [[development/CI-CD|CI/CD]] — GitHub Actions workflows
 - [[development/MessageFiltering|Message Filtering]] — Composable message evaluation abstraction (planned)
 
