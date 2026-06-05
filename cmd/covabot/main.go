@@ -72,7 +72,7 @@ func (h *Handler) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate
 	h.memory.ExtractAndSave(ctx, m.Author.ID, m.Content)
 
 	// 2. Recall context
-	memContext, err := h.memory.Recall(ctx, m.Content)
+	memContext, err := h.memory.Recall(ctx, m.Author.ID, m.Content)
 	if err != nil {
 		slog.Warn("failed to recall memory", "err", err)
 	}

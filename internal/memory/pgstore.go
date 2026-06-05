@@ -13,7 +13,7 @@ import (
 
 type Store interface {
 	SaveMemory(ctx context.Context, userID string, content string, embedding []float32) error
-	FindSimilar(ctx context.Context, embedding []float32, limit int) ([]MemoryRecord, error)
+	FindSimilar(ctx context.Context, userID string, embedding []float32, limit int) ([]MemoryRecord, error)
 	Close() error
 }
 
@@ -87,13 +87,14 @@ func (s *pgStore) SaveMemory(ctx context.Context, userID string, content string,
 	return nil
 }
 
-func (s *pgStore) FindSimilar(ctx context.Context, embedding []float32, limit int) ([]MemoryRecord, error) {
+func (s *pgStore) FindSimilar(ctx context.Context, userID string, embedding []float32, limit int) ([]MemoryRecord, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT id, user_id, content, created_at
 		FROM memories
-		ORDER BY embedding <=> $1
-		LIMIT $2
-	`, pgvector.NewVector(embedding), limit)
+		WHERE user_id = $1
+		ORDER BY embedding <=> $2
+		LIMIT $3
+	`, userID, pgvector.NewVector(embedding), limit)
 	if err != nil {
 		return nil, fmt.Errorf("memory: failed to query similar: %w", err)
 	}

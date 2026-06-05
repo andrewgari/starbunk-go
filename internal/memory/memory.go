@@ -14,7 +14,7 @@ type Service interface {
 	ExtractAndSave(ctx context.Context, userID string, message string)
 
 	// Recall searches the memory store for relevant context given an input message.
-	Recall(ctx context.Context, message string) (string, error)
+	Recall(ctx context.Context, userID string, message string) (string, error)
 }
 
 type serviceImpl struct {
@@ -80,7 +80,7 @@ func (s *serviceImpl) ExtractAndSave(ctx context.Context, userID string, message
 	}()
 }
 
-func (s *serviceImpl) Recall(ctx context.Context, message string) (string, error) {
+func (s *serviceImpl) Recall(ctx context.Context, userID string, message string) (string, error) {
 	lowLLM := s.llms.Low()
 	if lowLLM == nil {
 		return "", fmt.Errorf("memory: no LLM available for generating search embeddings")
@@ -98,7 +98,7 @@ func (s *serviceImpl) Recall(ctx context.Context, message string) (string, error
 		return "", nil
 	}
 
-	records, err := s.store.FindSimilar(ctx, embedResp.Embeddings[0], 5)
+	records, err := s.store.FindSimilar(ctx, userID, embedResp.Embeddings[0], 5)
 	if err != nil {
 		return "", fmt.Errorf("memory: similarity search failed: %w", err)
 	}
