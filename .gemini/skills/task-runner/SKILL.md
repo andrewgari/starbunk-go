@@ -23,7 +23,7 @@ If no arguments were provided, ask the user: "What are we working on? (e.g. `fea
 
 ## Step 1 — Sync main
 
-From the **main repo root** (`/mnt/data/tank/workspace/starbunk-go`):
+From the **main repo root**:
 
 ```bash
 git checkout main
@@ -45,6 +45,7 @@ git checkout -b <branch-name>
 Create an isolated working directory for this task. All file work happens here from this point on.
 
 ```bash
+mkdir -p "$(dirname ".gemini/worktrees/<branch-name>")"
 git worktree add .gemini/worktrees/<branch-name> <branch-name>
 ```
 
@@ -55,7 +56,7 @@ Tell the user: "Worktree ready at `.gemini/worktrees/<branch-name>`. Working in 
 ## Step 4 — Do the work
 
 **All file reads, edits, and writes must use the worktree path as root:**
-`/mnt/data/tank/workspace/starbunk-go/.gemini/worktrees/<branch-name>/`
+`.gemini/worktrees/<branch-name>/`
 
 Follow project conventions from GEMINI.md/AGENTS.md:
 - Each bot binary is isolated under `cmd/<bot>`
@@ -64,7 +65,7 @@ Follow project conventions from GEMINI.md/AGENTS.md:
 
 Run checks from the worktree root:
 ```bash
-cd /mnt/data/tank/workspace/starbunk-go/.gemini/worktrees/<branch-name>
+cd .gemini/worktrees/<branch-name>
 go vet ./...
 golangci-lint run
 go test ./...
@@ -87,12 +88,20 @@ Examples:
 - `chore(ci): update docker publish tags`
 
 ```bash
-cd /mnt/data/tank/workspace/starbunk-go/.gemini/worktrees/<branch-name>
+cd .gemini/worktrees/<branch-name>
 git add <specific files>
 git commit -m "..."
 ```
 
 ## Step 6 — Push and open PR
+
+Stop and ask for explicit permission before pushing:
+
+```text
+I have committed the changes on <branch-name>. May I push and open a PR?
+```
+
+Only after permission is granted:
 
 ```bash
 git push -u origin <branch-name>
@@ -120,7 +129,7 @@ EOF
 After the PR is open, remove the worktree to keep the repo tidy:
 
 ```bash
-cd /mnt/data/tank/workspace/starbunk-go
+cd "$(git rev-parse --show-toplevel)"
 git worktree remove .gemini/worktrees/<branch-name>
 ```
 

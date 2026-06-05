@@ -1,11 +1,11 @@
 ---
 name: health-check
-description: Comprehensive health check that runs build, test, lint, builds docker containers, checks the prometheus /health endpoint, and reports to the user.
+description: Comprehensive health check that runs build, test, lint, builds docker containers, checks container health/status, and reports to the user.
 ---
 
 # Comprehensive Health Check
 
-Run a full end-to-end local health check on the project, including compiling the code, running tests, linting, building Docker images, and verifying service health via the Prometheus endpoint.
+Run a full end-to-end local health check on the project, including compiling the code, running tests, linting, building Docker images, and verifying container status and recent logs.
 
 ## Instructions
 
@@ -38,14 +38,17 @@ Run the following checks sequentially:
    docker compose -f docker/docker-compose.yml up -d
    ```
 
-6. **Check Prometheus /health Endpoint**:
-   Check the `/health` endpoint. *Note: adjust the port depending on which service is exposing the prometheus metrics (e.g. 8080, 9090).*
+6. **Check Container Health/Status**:
+   Verify services are up and inspect recent logs:
    ```bash
    # Wait a few seconds for services to start
    sleep 5
-   
-   # Example curl command for the /health endpoint
-   curl -sSf http://localhost:8080/health || echo "Prometheus /health endpoint check failed"
+
+   # Verify service/container status
+   docker compose -f docker/docker-compose.yml ps
+
+   # Tail recent logs for quick failure signals
+   docker compose -f docker/docker-compose.yml logs --tail=50
    ```
 
 7. **Clean up**:

@@ -11,7 +11,7 @@
           },
           {
             "type": "command",
-            "command": "if ls *.go go.mod 2>/dev/null | head -1 > /dev/null; then go build ./... 2>&1 | tail -5; fi"
+            "command": "jq -r '.tool_input.file_path // empty' | { read -r f; [ -n \"$f\" ] && { echo \"$f\" | grep -q '\\.go$' || [ \"$(basename \"$f\")\" = \"go.mod\" ]; } && [ -f go.mod ] && go build ./... 2>&1 | tail -5; } 2>/dev/null || true"
           }
         ]
       }

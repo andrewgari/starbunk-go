@@ -1,7 +1,7 @@
 # GEMINI.md
 
 Agent guide for Gemini. All rules, architecture notes, and the DevOps
-maintenance checklist live in [AGENTS.md](AGENTS.md) and are imported below.
+maintenance checklist live in [AGENTS.md](AGENTS.md).
 
 ## Gemini: Proactive Skill Use
 
@@ -10,7 +10,7 @@ the skill immediately — don't describe what you'd do, just do it.
 
 | Situation | Skill / Rule |
 |---|---|
-| Any coding, fixing, or refactoring task | Use `task` artifact or `go-craftsman` skill |
+| Any coding, fixing, or refactoring task | Use `task-runner` or `go-craftsman` skill |
 | Developing features, bugfixes, or ports | **Mandatory TDD**: Write Ginkgo tests first (Test-Only PR 1), then implement (PR 2) |
 | Code has been written or changed | `go-craftsman` — review for quality and reuse |
 | Deploying or updating containers on Tower | `devops` skill |

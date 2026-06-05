@@ -21,6 +21,7 @@ git checkout -b <branch-name>
 
 **Always use worktrees**: You must isolate your work by adding a git worktree. This prevents state conflicts and keeps your workspace clean.
 ```bash
+mkdir -p "$(dirname ".claude/worktrees/<branch-name>")"
 git worktree add .claude/worktrees/<branch-name> <branch-name>
 ```
 *(Note: All subsequent code modifications must be performed inside this worktree directory.)*
