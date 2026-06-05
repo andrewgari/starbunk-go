@@ -43,6 +43,12 @@ func NewTracker(l llm.Service) Tracker {
 	}
 }
 
+// simResult pairs a conversation with its pre-computed similarity to the incoming message.
+type simResult struct {
+	conv *ActiveConversation
+	sim  float32
+}
+
 func (t *llmTracker) Assign(ctx context.Context, channelID string, tags []string) ([]string, error) {
 	if len(tags) == 0 {
 		return nil, nil
@@ -61,7 +67,7 @@ func (t *llmTracker) Assign(ctx context.Context, channelID string, tags []string
 
 	live := t.live[channelID]
 	var assigned []string
-	var ambiguous []*ActiveConversation
+	var ambiguous []simResult // carries pre-computed sim so we don't recompute below
 
 	for _, conv := range live {
 		sim := cosineSimilarity(msgCentroid, conv.Centroid)
@@ -70,12 +76,12 @@ func (t *llmTracker) Assign(ctx context.Context, channelID string, tags []string
 			updateCentroid(conv, msgCentroid)
 			conv.LastActivity = time.Now()
 		} else if sim >= t.tLow {
-			ambiguous = append(ambiguous, conv)
+			ambiguous = append(ambiguous, simResult{conv, sim})
 		}
 	}
 
 	if len(assigned) == 0 && len(ambiguous) == 0 {
-		// Seed new
+		// Seed new conversation — no existing thread is close enough.
 		id := "conv-" + generateID()
 		newConv := &ActiveConversation{
 			ID:           id,
@@ -86,20 +92,18 @@ func (t *llmTracker) Assign(ctx context.Context, channelID string, tags []string
 		t.live[channelID] = append(t.live[channelID], newConv)
 		assigned = append(assigned, id)
 	} else if len(assigned) == 0 && len(ambiguous) > 0 {
-		// Fallback: assign to the best match in the ambiguous band
-		var best *ActiveConversation
-		var bestSim float32 = -1
-		for _, c := range ambiguous {
-			s := cosineSimilarity(msgCentroid, c.Centroid)
-			if s > bestSim {
-				bestSim = s
-				best = c
+		// Ambiguous band: assign to the best match using the already-computed similarities.
+		var best simResult
+		best.sim = -1
+		for _, r := range ambiguous {
+			if r.sim > best.sim {
+				best = r
 			}
 		}
-		if best != nil {
-			assigned = append(assigned, best.ID)
-			updateCentroid(best, msgCentroid)
-			best.LastActivity = time.Now()
+		if best.conv != nil {
+			assigned = append(assigned, best.conv.ID)
+			updateCentroid(best.conv, msgCentroid)
+			best.conv.LastActivity = time.Now()
 		}
 	}
 
@@ -119,13 +123,22 @@ func averageEmbeddings(embs [][]float32) []float32 {
 	}
 	dim := len(embs[0])
 	res := make([]float32, dim)
+	valid := 0
 	for _, emb := range embs {
-		for i := 0; i < dim; i++ {
+		if len(emb) != dim {
+			// Skip malformed embeddings rather than panic on out-of-bounds access.
+			continue
+		}
+		for i := range dim {
 			res[i] += emb[i]
 		}
+		valid++
 	}
-	for i := 0; i < dim; i++ {
-		res[i] /= float32(len(embs))
+	if valid == 0 {
+		return nil
+	}
+	for i := range dim {
+		res[i] /= float32(valid)
 	}
 	return res
 }

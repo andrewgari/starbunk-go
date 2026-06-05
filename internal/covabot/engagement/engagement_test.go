@@ -27,8 +27,7 @@ var _ = Describe("Engagement Manager", func() {
 				})
 				Expect(res.Respond).To(BeTrue())
 				Expect(res.Reason).To(Equal(engagement.ReasonMention))
-				// Either normal or invested, but high pull usually means invested or normal
-				Expect(res.Energy).To(Or(Equal(engagement.EnergyInvested), Equal(engagement.EnergyNormal)))
+				Expect(res.Energy).To(Equal(engagement.EnergyInvested))
 			})
 
 			It("should respond to direct mentions even if dampened", func() {

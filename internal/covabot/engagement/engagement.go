@@ -1,6 +1,13 @@
 package engagement
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
+
+// recentSpeakWindow is how long engagement continuity stays active after Cova speaks.
+// After this window the flag decays and Cova stops following ambient channel messages.
+const recentSpeakWindow = 5 * time.Minute
 
 // MessageInput represents the minimal information needed from a message
 // to judge engagement pull and apply restraint.
@@ -38,9 +45,9 @@ type Result struct {
 }
 
 type channelState struct {
-	Muted         bool
-	Dampened      bool
-	LastCovaSpeak bool
+	Muted       bool
+	Dampened    bool
+	lastSpokeAt time.Time // zero value = Cova has not spoken; decays after recentSpeakWindow
 }
 
 // Manager tracks the engagement state per channel and decides if CovaBot should respond.
@@ -71,7 +78,7 @@ func (m *Manager) ShouldRespond(input MessageInput) Result {
 	state := m.getState(input.ChannelID)
 	muted := state.Muted
 	dampened := state.Dampened
-	lastSpeak := state.LastCovaSpeak
+	recentlySpoke := !state.lastSpokeAt.IsZero() && time.Since(state.lastSpokeAt) < recentSpeakWindow
 	m.mu.Unlock()
 
 	// 1. Direct Mention (Highest pull, clears all restraints including mute)
@@ -102,8 +109,8 @@ func (m *Manager) ShouldRespond(input MessageInput) Result {
 		return Result{Respond: false}
 	}
 
-	// 5. Engagement Continuity
-	if lastSpeak {
+	// 5. Engagement Continuity — active for recentSpeakWindow after Cova last spoke
+	if recentlySpoke {
 		return Result{
 			Respond: true,
 			Reason:  ReasonContext,
@@ -114,18 +121,28 @@ func (m *Manager) ShouldRespond(input MessageInput) Result {
 	return Result{Respond: false}
 }
 
-// RecordCovaSpeak records that CovaBot just spoke in a channel, increasing engagement continuity.
+// RecordCovaSpeak records that CovaBot just spoke in a channel.
+// Engagement continuity will remain active for recentSpeakWindow from this call.
 func (m *Manager) RecordCovaSpeak(channelID string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.getState(channelID).LastCovaSpeak = true
+	m.getState(channelID).lastSpokeAt = time.Now()
 }
 
 // Dampen temporarily raises the pull floor in a channel, silencing non-directed responses.
+// NOTE: auto-decay (design doc §4.3) is not yet implemented — the dampener currently
+// stays active until explicitly cleared. Use SetDampen(channelID, false) to lift it.
 func (m *Manager) Dampen(channelID string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.getState(channelID).Dampened = true
+}
+
+// SetDampen explicitly sets or clears the dampener for a channel.
+func (m *Manager) SetDampen(channelID string, dampened bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.getState(channelID).Dampened = dampened
 }
 
 // SetMute applies a hard floor. Only direct addresses pass through.

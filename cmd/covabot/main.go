@@ -72,13 +72,16 @@ func (h *Handler) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate
 	ctx := context.Background()
 
 	// 1. Tag the message (Topical & Structural)
+	// On failure tagRes is zero-value: TopicalTags==nil (safe — Assign skips empty slices)
+	// and Structural.Addressee=="" (not equal to AddresseeSelf, so isAddressee stays false).
+	// Both are the conservative/silent fallback we want.
 	tagRes, err := h.tagger.TagMessage(ctx, m.Content, tagger.TaggingContext{})
 	if err != nil {
-		slog.Warn("tagger failed, proceeding with default tags", "err", err)
+		slog.Warn("tagger failed, proceeding with zero-value tags", "err", err)
 	}
 
-	// 2. Assign to conversation(s)
-	// (Skipping error check on Assign to not block flow if embedding fails)
+	// 2. Assign to conversation(s).
+	// TODO: wire returned conversation IDs into the engagement pull score (build sequence §11 step 2).
 	_, _ = h.conversation.Assign(ctx, m.ChannelID, tagRes.TopicalTags)
 
 	// 3. Check engagement (Pull/Restraint)
