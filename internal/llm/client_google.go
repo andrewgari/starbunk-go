@@ -11,7 +11,7 @@ import (
 )
 
 type googleClient struct {
-	config     Config
+	config     ClientConfig
 	httpClient *http.Client
 }
 
@@ -44,7 +44,7 @@ type googleResponse struct {
 	} `json:"usageMetadata"`
 }
 
-func newGoogleClient(cfg Config) Service {
+func newGoogleClient(cfg ClientConfig) Service {
 	if cfg.BaseURL == "" {
 		cfg.BaseURL = "https://generativelanguage.googleapis.com/v1beta"
 	}
@@ -128,4 +128,8 @@ func (c *googleClient) Generate(ctx context.Context, req GenerateRequest) (*Gene
 		PromptTokens:     apiResp.UsageMetadata.PromptTokenCount,
 		CompletionTokens: apiResp.UsageMetadata.CandidatesTokenCount,
 	}, nil
+}
+
+func (c *googleClient) Embed(ctx context.Context, req EmbedRequest) (*EmbedResponse, error) {
+	return nil, fmt.Errorf("google: embed not implemented yet")
 }

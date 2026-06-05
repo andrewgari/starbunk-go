@@ -44,3 +44,12 @@ type GenerateResponse struct {
 	PromptTokens     int
 	CompletionTokens int
 }
+
+type EmbedRequest struct {
+	Input []string
+	Model string // Optional: to override default model
+}
+
+type EmbedResponse struct {
+	Embeddings [][]float32
+}

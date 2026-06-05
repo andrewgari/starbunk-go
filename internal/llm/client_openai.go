@@ -11,7 +11,7 @@ import (
 )
 
 type openAIClient struct {
-	config     Config
+	config     ClientConfig
 	httpClient *http.Client
 }
 
@@ -36,7 +36,7 @@ type openAIResponse struct {
 	} `json:"usage"`
 }
 
-func newOpenAIClient(cfg Config) Service {
+func newOpenAIClient(cfg ClientConfig) Service {
 	if cfg.BaseURL == "" {
 		cfg.BaseURL = "https://api.openai.com/v1"
 	}
@@ -104,4 +104,63 @@ func (c *openAIClient) Generate(ctx context.Context, req GenerateRequest) (*Gene
 		PromptTokens:     apiResp.Usage.PromptTokens,
 		CompletionTokens: apiResp.Usage.CompletionTokens,
 	}, nil
+}
+
+type openAIEmbeddingRequest struct {
+	Model string   `json:"model"`
+	Input []string `json:"input"`
+}
+
+type openAIEmbeddingResponse struct {
+	Data []struct {
+		Embedding []float32 `json:"embedding"`
+	} `json:"data"`
+}
+
+func (c *openAIClient) Embed(ctx context.Context, req EmbedRequest) (*EmbedResponse, error) {
+	apiReq := openAIEmbeddingRequest{
+		Model: req.Model,
+		Input: req.Input,
+	}
+	if apiReq.Model == "" {
+		apiReq.Model = "text-embedding-3-small"
+	}
+
+	bodyBytes, err := json.Marshal(apiReq)
+	if err != nil {
+		return nil, fmt.Errorf("openai: failed to marshal embed request: %w", err)
+	}
+
+	url := fmt.Sprintf("%s/embeddings", c.config.BaseURL)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, fmt.Errorf("openai: failed to create embed request: %w", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Authorization", "Bearer "+c.config.APIKey)
+
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("openai: embed request failed: %w", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("openai: unexpected embed status %d: %s", resp.StatusCode, string(b))
+	}
+
+	var apiResp openAIEmbeddingResponse
+	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+		return nil, fmt.Errorf("openai: failed to decode embed response: %w", err)
+	}
+
+	embeddings := make([][]float32, len(apiResp.Data))
+	for i, d := range apiResp.Data {
+		embeddings[i] = d.Embedding
+	}
+
+	return &EmbedResponse{Embeddings: embeddings}, nil
 }
