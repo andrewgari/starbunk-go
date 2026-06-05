@@ -18,7 +18,8 @@ CovaBot, which uses Ollama (primary), Gemini, and OpenAI as fallbacks.
 
 - **Entry point:** `cmd/covabot/main.go`
 - **Framework:** `internal/bot.Run` + `internal/discord.MessagingService`
-- **LLM:** `CLOUD_LLM_PROVIDER` / `LOCAL_LLM_PROVIDER` env vars (not yet wired in Go port)
+- **LLM:** `internal/llm.Registry` provides High/Medium/Low tier routing.
+- **Memory:** `internal/memory.Service` handles asynchronous pgvector-based fact extraction (Low tier) and similarity search for context injection.
 - API calls must be fully async and timeout-resistant.
 
 ## Edge Cases

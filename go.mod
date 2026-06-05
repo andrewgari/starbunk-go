@@ -15,6 +15,8 @@ require (
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20260402051712-545e8a4df936 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/lib/pq v1.12.3
+	github.com/pgvector/pgvector-go v0.4.0
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.50.0 // indirect
 	golang.org/x/mod v0.35.0 // indirect
