@@ -143,6 +143,10 @@ func NewRegistry(cfg Config) (Registry, error) {
 			return nil, nil
 		}
 
+		if t.Model == "" {
+			return nil, fmt.Errorf("llm: %s tier model is required when provider '%s' is set", tierName, t.Provider)
+		}
+
 		// Override the model with the tier's model
 		pcfg.Model = t.Model
 		return NewClient(pcfg)

@@ -123,7 +123,11 @@ func (c *openAIClient) Embed(ctx context.Context, req EmbedRequest) (*EmbedRespo
 		Input: req.Input,
 	}
 	if apiReq.Model == "" {
-		apiReq.Model = "text-embedding-3-small"
+		if c.config.Model != "" {
+			apiReq.Model = c.config.Model
+		} else {
+			apiReq.Model = "text-embedding-3-small"
+		}
 	}
 
 	bodyBytes, err := json.Marshal(apiReq)
