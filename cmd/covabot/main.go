@@ -69,15 +69,6 @@ func main() {
 }
 
 func (h *Handler) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if m.Content == "ping covabot" {
-		sender := discord.NewMessageService(s)
-		_, err := sender.SendMessage(m.ChannelID, "Pong from covabot!")
-		if err != nil {
-			slog.Error("failed to send message", "bot", "covabot", "err", err)
-		}
-		return
-	}
-
 	ctx := context.Background()
 
 	// 1. Tag the message (Topical & Structural)
