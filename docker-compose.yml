@@ -49,6 +49,9 @@ services:
     image: ghcr.io/andrewgari/starbunk-go-covabot:${IMAGE_TAG:-latest}
     container_name: starbunk-go-covabot
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       - DISCORD_TOKEN=${COVABOT_TOKEN:-${STARBUNK_TOKEN}}
     logging:
@@ -86,3 +89,24 @@ services:
         max-file: "3"
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: starbunk-go-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-starbunk}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?error}
+      POSTGRES_DB: ${POSTGRES_DB:-starbunk_memory}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-starbunk} -d ${POSTGRES_DB:-starbunk_memory}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

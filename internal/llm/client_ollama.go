@@ -40,6 +40,16 @@ type ollamaResponse struct {
 	EvalCount       int `json:"eval_count"`
 }
 
+type ollamaEmbedRequest struct {
+	Model string   `json:"model"`
+	Input []string `json:"input"`
+}
+
+type ollamaEmbedResponse struct {
+	Model      string      `json:"model"`
+	Embeddings [][]float32 `json:"embeddings"`
+}
+
 func newOllamaClient(cfg ClientConfig) Service {
 	if cfg.BaseURL == "" {
 		cfg.BaseURL = "http://localhost:11434"
@@ -111,5 +121,47 @@ func (c *ollamaClient) Generate(ctx context.Context, req GenerateRequest) (*Gene
 }
 
 func (c *ollamaClient) Embed(ctx context.Context, req EmbedRequest) (*EmbedResponse, error) {
-	return nil, fmt.Errorf("ollama: embed not implemented yet")
+	model := req.Model
+	if model == "" {
+		model = c.config.Model
+	}
+
+	apiReq := ollamaEmbedRequest{
+		Model: model,
+		Input: req.Input,
+	}
+
+	bodyBytes, err := json.Marshal(apiReq)
+	if err != nil {
+		return nil, fmt.Errorf("ollama: failed to marshal embed request: %w", err)
+	}
+
+	url := fmt.Sprintf("%s/api/embed", c.config.BaseURL)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, fmt.Errorf("ollama: failed to create embed request: %w", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("ollama: embed request failed: %w", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("ollama: unexpected status %d: %s", resp.StatusCode, string(b))
+	}
+
+	var apiResp ollamaEmbedResponse
+	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+		return nil, fmt.Errorf("ollama: failed to decode embed response: %w", err)
+	}
+
+	return &EmbedResponse{
+		Embeddings: apiResp.Embeddings,
+	}, nil
 }
