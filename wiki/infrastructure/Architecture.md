@@ -43,6 +43,12 @@ starbunk-go/
 - `SendMessageWithIdentity` — creates/reuses a per-channel webhook to post as a
   custom user/avatar.
 
+### `internal/llm`
+
+- `Service` — unified abstraction for bots to interact with Large Language Models.
+- Agnostic to providers (OpenAI, Anthropic, Ollama, Google).
+- Explicit `ResponseSchema` allows callers to enforce format (Text, JSON, Enum) and provide validation rules or choices.
+
 ### `internal/middleware`
 
 Composable message audit gates. Every bot must supply a `MessageAuditor` to
