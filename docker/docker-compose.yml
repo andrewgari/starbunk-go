@@ -42,6 +42,9 @@ services:
         BOT_NAME: covabot
     container_name: starbunk-go-covabot
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       - DISCORD_TOKEN=${COVABOT_TOKEN:-${STARBUNK_TOKEN}}
     logging:
@@ -90,6 +93,11 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-starbunk}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-starbunk}
       POSTGRES_DB: ${POSTGRES_DB:-starbunk_memory}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-starbunk} -d ${POSTGRES_DB:-starbunk_memory}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     ports:
       - "5432:5432"
     volumes:
