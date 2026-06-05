@@ -81,6 +81,10 @@ while IFS= read -r svc; do
   # Strip the "starbunk-go-" prefix if present to get the bot name.
   # Services named starbunk-go-<bot> → bot name is after the last dash.
   bot="${svc#starbunk-go-}"
+  if [ "$bot" == "postgres" ] || [ "$bot" == "pgdata" ]; then
+    continue
+  fi
+
   if [ ! -d "cmd/${bot}" ]; then
     fail "docker-compose.yml: service '${svc}' has no matching cmd/${bot}/"
   else

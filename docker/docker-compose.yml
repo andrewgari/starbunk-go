@@ -81,3 +81,19 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: starbunk-go-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-starbunk}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-starbunk}
+      POSTGRES_DB: ${POSTGRES_DB:-starbunk_memory}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
